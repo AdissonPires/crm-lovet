@@ -760,3 +760,154 @@ export const equipeMembros = pgTable("equipe_membros", {
   uniqueIndex("uq_equipe_membro").on(t.equipeId, t.userId),
   index("ix_equipe_membro_user").on(t.userId),
 ]);
+
+// ─── Gestão comercial de distribuidora (catálogo, cotações, pedidos, metas) ───
+//
+// Tabelas aditivas. Cada linha carrega o marcador de dado sintético: `isSynthetic`
+// (verdadeiro = veio de simulação, nunca de operação real), `origin`
+// ("SIMULACAO_IA"), `batch` (lote da carga) e `externalId` (chave idempotente).
+const sim = () => ({
+  isSynthetic: boolean("is_synthetic").notNull().default(false),
+  origin: text("origin"),
+  batch: text("batch"),
+  externalId: text("external_id"),
+});
+
+export const salesRegions = pgTable("sales_regions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  code: text("code").notNull(),
+  name: text("name").notNull(),
+  states: text("states"),
+  ...sim(),
+}, (t) => [uniqueIndex("uq_sales_region_code").on(t.workspaceId, t.code)]);
+
+export const catalogProducts = pgTable("catalog_products", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  sku: text("sku").notNull(),
+  name: text("name").notNull(),
+  manufacturer: text("manufacturer"),
+  brand: text("brand"),
+  category: text("category").notNull(),
+  subcategory: text("subcategory"),
+  species: text("species"),
+  packaging: text("packaging"),
+  unit: text("unit"),
+  presentation: text("presentation"),
+  audience: text("audience"),
+  /** confirmado = validado em fonte oficial; pendente_confirmacao; simulado = produto de teste. */
+  catalogStatus: text("catalog_status", { enum: ["confirmado", "pendente_confirmacao", "simulado"] }).notNull().default("pendente_confirmacao"),
+  source: text("source"),
+  validatedAt: timestamp("validated_at"),
+  /** Preço de lista FICTÍCIO quando isSynthetic. */
+  listPrice: numeric("list_price", { precision: 12, scale: 2 }),
+  ...sim(),
+}, (t) => [
+  uniqueIndex("uq_catalog_sku").on(t.workspaceId, t.sku),
+  index("ix_catalog_category").on(t.workspaceId, t.category),
+]);
+
+export const salesQuotes = pgTable("sales_quotes", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  number: text("number").notNull(),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  contactId: uuid("contact_id").references(() => contacts.id),
+  opportunityId: uuid("opportunity_id").references(() => opportunities.id),
+  ownerId: uuid("owner_id").references(() => users.id),
+  version: integer("version").notNull().default(1),
+  status: text("status", { enum: ["enviada", "aprovada", "recusada", "expirada", "substituida"] }).notNull().default("enviada"),
+  issuedAt: timestamp("issued_at").notNull(),
+  validUntil: timestamp("valid_until"),
+  decidedAt: timestamp("decided_at"),
+  subtotal: numeric("subtotal", { precision: 14, scale: 2 }).notNull(),
+  discountTotal: numeric("discount_total", { precision: 14, scale: 2 }).notNull().default("0"),
+  total: numeric("total", { precision: 14, scale: 2 }).notNull(),
+  notes: text("notes"),
+  ...sim(),
+}, (t) => [
+  uniqueIndex("uq_sales_quote_number").on(t.workspaceId, t.number),
+  index("ix_sales_quote_company").on(t.workspaceId, t.companyId),
+  index("ix_sales_quote_issued").on(t.workspaceId, t.issuedAt),
+]);
+
+export const salesQuoteItems = pgTable("sales_quote_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  quoteId: uuid("quote_id").notNull().references(() => salesQuotes.id, { onDelete: "cascade" }),
+  productId: uuid("product_id").notNull().references(() => catalogProducts.id),
+  qty: integer("qty").notNull(),
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
+  discountPct: numeric("discount_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  total: numeric("total", { precision: 14, scale: 2 }).notNull(),
+  ...sim(),
+}, (t) => [index("ix_sales_quote_item_quote").on(t.quoteId)]);
+
+export const salesOrders = pgTable("sales_orders", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  number: text("number").notNull(),
+  companyId: uuid("company_id").notNull().references(() => companies.id),
+  contactId: uuid("contact_id").references(() => contacts.id),
+  ownerId: uuid("owner_id").references(() => users.id),
+  quoteId: uuid("quote_id").references(() => salesQuotes.id),
+  opportunityId: uuid("opportunity_id").references(() => opportunities.id),
+  campaignId: uuid("campaign_id").references(() => campaigns.id),
+  /** cotacao | recompra_direta */
+  channel: text("channel").notNull().default("cotacao"),
+  status: text("status", {
+    enum: ["recebido", "em_separacao", "faturado_simulado", "enviado", "entregue", "cancelado", "com_ocorrencia"],
+  }).notNull().default("recebido"),
+  orderedAt: timestamp("ordered_at").notNull(),
+  deliveredAt: timestamp("delivered_at"),
+  subtotal: numeric("subtotal", { precision: 14, scale: 2 }).notNull(),
+  discountTotal: numeric("discount_total", { precision: 14, scale: 2 }).notNull().default("0"),
+  total: numeric("total", { precision: 14, scale: 2 }).notNull(),
+  notes: text("notes"),
+  ...sim(),
+}, (t) => [
+  uniqueIndex("uq_sales_order_number").on(t.workspaceId, t.number),
+  index("ix_sales_order_company").on(t.workspaceId, t.companyId),
+  index("ix_sales_order_date").on(t.workspaceId, t.orderedAt),
+]);
+
+export const salesOrderItems = pgTable("sales_order_items", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orderId: uuid("order_id").notNull().references(() => salesOrders.id, { onDelete: "cascade" }),
+  productId: uuid("product_id").notNull().references(() => catalogProducts.id),
+  qty: integer("qty").notNull(),
+  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }).notNull(),
+  discountPct: numeric("discount_pct", { precision: 5, scale: 2 }).notNull().default("0"),
+  total: numeric("total", { precision: 14, scale: 2 }).notNull(),
+  ...sim(),
+}, (t) => [index("ix_sales_order_item_order").on(t.orderId)]);
+
+export const salesTargets = pgTable("sales_targets", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  userId: uuid("user_id").references(() => users.id),
+  regionCode: text("region_code"),
+  /** AAAA-MM */
+  month: text("month").notNull(),
+  targetAmount: numeric("target_amount", { precision: 14, scale: 2 }).notNull(),
+  ...sim(),
+}, (t) => [index("ix_sales_target_month").on(t.workspaceId, t.month)]);
+
+export const campaignResults = pgTable("campaign_results", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
+  campaignId: uuid("campaign_id").notNull().references(() => campaigns.id),
+  objective: text("objective").notNull(),
+  targetAudience: text("target_audience"),
+  region: text("region"),
+  periodStart: timestamp("period_start").notNull(),
+  periodEnd: timestamp("period_end").notNull(),
+  products: text("products"),
+  clientsReached: integer("clients_reached").notNull().default(0),
+  opportunitiesGenerated: integer("opportunities_generated").notNull().default(0),
+  quotesGenerated: integer("quotes_generated").notNull().default(0),
+  simulatedSales: numeric("simulated_sales", { precision: 14, scale: 2 }).notNull().default("0"),
+  result: text("result"),
+  rating: integer("rating"),
+  ...sim(),
+}, (t) => [index("ix_campaign_result_campaign").on(t.campaignId)]);
