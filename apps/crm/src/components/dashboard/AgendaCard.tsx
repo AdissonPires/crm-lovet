@@ -29,7 +29,7 @@ export function AgendaCard({ items }: { items: AgendaItem[] }) {
         <h2 className="text-sm font-semibold text-zinc-800">Agenda de Hoje</h2>
       </div>
 
-      <div className="flex-1 divide-y divide-slate-50">
+      <div className="flex-1 divide-y divide-slate-50 max-h-[340px] overflow-y-auto pr-1">
         {items.map((item) => (
           <div key={item.id} className="py-2.5 flex items-center gap-3">
             <div className="w-12 shrink-0 text-[12px] font-bold text-brand-700 tabular-nums">{item.time}</div>

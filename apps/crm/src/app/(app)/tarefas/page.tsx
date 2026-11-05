@@ -5,6 +5,9 @@ import { requireUser } from "@/lib/auth";
 import { createTask, toggleTask } from "@/app/actions";
 import { relTime } from "@/lib/format";
 
+const LIMITE_ABERTAS = 100;
+const LIMITE_CONCLUIDAS = 30;
+
 export default async function TarefasPage() {
   const user = await requireUser();
 
@@ -87,13 +90,14 @@ export default async function TarefasPage() {
       </form>
 
       <div className="rounded-2xl bg-white border border-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-14px_rgba(0,0,0,0.12)] divide-y divide-zinc-50">
-        {open.map((r) => <TaskRow key={r.task.id} r={r} />)}
+        {open.slice(0, LIMITE_ABERTAS).map((r) => <TaskRow key={r.task.id} r={r} />)}
         {open.length === 0 && <div className="px-5 py-10 text-center text-sm text-zinc-400">Tudo em dia.</div>}
+        {open.length > LIMITE_ABERTAS && <div className="px-5 py-3 text-center text-xs text-zinc-400">Mostrando as {LIMITE_ABERTAS} mais próximas de {open.length} tarefas em aberto.</div>}
       </div>
 
       {done.length > 0 && (
         <div className="mt-5 rounded-2xl bg-white border border-zinc-100 divide-y divide-zinc-50 opacity-60">
-          {done.map((r) => <TaskRow key={r.task.id} r={r} />)}
+          {done.slice(-LIMITE_CONCLUIDAS).reverse().map((r) => <TaskRow key={r.task.id} r={r} />)}
         </div>
       )}
     </div>

@@ -12,6 +12,8 @@ import { signContract } from "@/app/actions-contratos";
 const statusTone: Record<string, "green" | "amber" | "blue" | "zinc"> = { signed: "green", sent: "blue", draft: "amber", canceled: "zinc" };
 const statusLabel: Record<string, string> = { signed: "Assinado", sent: "Enviado", draft: "Rascunho", canceled: "Cancelado" };
 
+const LIMITE_LISTA = 100;
+
 export default async function ContratosPage() {
   const user = await requireUser();
   if (!can(user.role, "view_pipeline")) redirect("/");
@@ -53,7 +55,7 @@ export default async function ContratosPage() {
             </tr>
           </thead>
           <tbody className="divide-y divide-zinc-50">
-            {rows.map(({ c, oppId, companyName, oppName }) => {
+            {rows.slice(0, LIMITE_LISTA).map(({ c, oppId, companyName, oppName }) => {
               const podeAssinarEste = podeAssinar && c.status !== "signed" && c.status !== "canceled";
               return (
                 <tr key={c.id} className="hover:bg-zinc-50/60">
@@ -82,6 +84,7 @@ export default async function ContratosPage() {
           </tbody>
         </table>
         {rows.length === 0 && <EmptyState title="Nenhum contrato." />}
+        {rows.length > LIMITE_LISTA && <div className="px-5 py-3 text-center text-xs text-zinc-400 border-t border-zinc-50">Mostrando os {LIMITE_LISTA} mais recentes de {rows.length} contratos.</div>}
       </div>
 
     </div>
