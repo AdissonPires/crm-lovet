@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import {
   Users, UserPlus, Target, ShoppingBag, Megaphone, FileBarChart,
-  StickyNote, Phone, Sparkles,
+  StickyNote, Phone, Sparkles, MessageCircle, Mail, MapPin, FileText, Handshake, Package, Star, RotateCcw,
 } from "lucide-react";
 import { db, schema as s } from "@/db";
 import { requireUser } from "@/lib/auth";
@@ -31,6 +31,21 @@ const actMeta: Record<string, { Icon: ActivityRow["Icon"]; colorClass: string }>
   note: { Icon: StickyNote, colorClass: "bg-zinc-400" },
   call_logged: { Icon: Phone, colorClass: "bg-sky-500" },
   stage_changed: { Icon: Target, colorClass: "bg-brand-600" },
+  presales_status_changed: { Icon: Target, colorClass: "bg-brand-600" },
+  presales_handoff: { Icon: Handshake, colorClass: "bg-violet-500" },
+  whatsapp_sim: { Icon: MessageCircle, colorClass: "bg-emerald-500" },
+  email_sim: { Icon: Mail, colorClass: "bg-sky-500" },
+  visit: { Icon: MapPin, colorClass: "bg-amber-500" },
+  meeting: { Icon: Users, colorClass: "bg-violet-500" },
+  presentation: { Icon: Sparkles, colorClass: "bg-violet-500" },
+  quote_sent: { Icon: FileText, colorClass: "bg-brand-500" },
+  price_negotiation: { Icon: Handshake, colorClass: "bg-amber-500" },
+  follow_up: { Icon: Phone, colorClass: "bg-sky-500" },
+  order_tracking: { Icon: Package, colorClass: "bg-zinc-500" },
+  post_sale: { Icon: Star, colorClass: "bg-emerald-500" },
+  satisfaction_survey: { Icon: Star, colorClass: "bg-emerald-500" },
+  recovery: { Icon: RotateCcw, colorClass: "bg-rose-500" },
+  campaign_touch: { Icon: Megaphone, colorClass: "bg-brand-500" },
   ai_suggestion: { Icon: Sparkles, colorClass: "bg-violet-500" },
 };
 
