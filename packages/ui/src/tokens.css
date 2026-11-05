@@ -1,0 +1,49 @@
+/**
+ * Tokens visuais do CRM Lovet.
+ *
+ * Base escura compartilhada, acento distinto por modulo: o usuario reconhece em
+ * qual sistema esta pela cor, e o ecossistema continua parecendo um produto so.
+ *
+ * White-label: trocar a identidade de um cliente e trocar o acento e o
+ * logotipo. Nenhum componente precisa mudar.
+ */
+
+:root {
+  /* ── Base compartilhada ──────────────────────────────────────────────── */
+  --noturno: #001621; /* fundo escuro dos dois modulos */
+  --superficie: #04202e; /* cartoes sobre o noturno */
+  --linha: #0e2a3c; /* bordas discretas */
+
+  /* ── Acentos por modulo ──────────────────────────────────────────────── */
+  --brand-crm: #21f1a8; /* CRM — verde menta */
+
+  /* ── Escala do vermelho (nome "oceano" mantido por compatibilidade) ──── */
+  --oceano: #a10f13;
+  --oceano-forte: #c93338; /* estado ativo, foco */
+  --oceano-claro: #e3999c; /* destaque suave, series de grafico */
+
+  /* ── Texto ───────────────────────────────────────────────────────────── */
+  --branco: #f4f8fb; /* numeros e titulos, uso pontual */
+  --cinza: #7d93a6; /* rotulos e texto secundario pequeno */
+
+  /* ── Semanticos financeiros ──────────────────────────────────────────── */
+  /* Em tela financeira, cor carrega informacao — nao e decoracao. */
+  --entrada: #2fbf8f;
+  --saida: #e0655b;
+  --alerta: #e5a83c;
+}
+
+@theme inline {
+  --color-noturno: var(--noturno);
+  --color-superficie: var(--superficie);
+  --color-linha: var(--linha);
+  --color-brand-crm: var(--brand-crm);
+  --color-oceano: var(--oceano);
+  --color-oceano-forte: var(--oceano-forte);
+  --color-oceano-claro: var(--oceano-claro);
+  --color-branco: var(--branco);
+  --color-cinza: var(--cinza);
+  --color-entrada: var(--entrada);
+  --color-saida: var(--saida);
+  --color-alerta: var(--alerta);
+}

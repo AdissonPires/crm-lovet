@@ -1,0 +1,28 @@
+# Fim de linha.
+#
+# O Git no Windows converte para CRLF ao clonar, por padrão. Para a maior parte
+# do código isso é inofensivo, mas dois tipos de arquivo aqui são LIDOS DENTRO
+# DE UM CONTAINER LINUX, e lá o CR é um caractere comum, não fim de linha:
+#
+#   - n8n-evolution/init-db.sh é montado no Postgres e executado na primeira
+#     inicialização. Com CRLF ele falha em "line 2: $'\r': command not found",
+#     os bancos não são criados, e todo o resto quebra depois — com mensagens
+#     que não têm nada a ver com a causa.
+#   - Os .sql são passados ao psql do mesmo jeito.
+#
+# `text eol=lf` obriga esses arquivos a ficarem com LF no disco, em qualquer
+# sistema operacional.
+* text=auto
+
+*.sh    text eol=lf
+*.sql   text eol=lf
+Dockerfile text eol=lf
+
+# Binários: o Git não deve tentar normalizar nada aqui.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.pdf   binary
+*.m4a   binary
+*.xls   binary
+*.xlsx  binary

@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "lovet-crm",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:crm"],
+      "port": 3000
+    }
+  ]
+}

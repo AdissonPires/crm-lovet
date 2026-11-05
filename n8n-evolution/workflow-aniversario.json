@@ -1,0 +1,56 @@
+{
+  "name": "Aniversário - Lovet Distribuidora",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 9 * * *"
+            }
+          ]
+        }
+      },
+      "id": "sch-bday-1",
+      "name": "Todo dia às 9h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const EVOLUTION = 'http://evolution-api:8080';\nconst EVO_KEY = 'SUBSTITUA_PELA_EVOLUTION_API_KEY';\nconst INSTANCE = 'principal';\nconst CRM = 'http://lovet-crm:3000';\nconst WA_TOKEN = 'SUBSTITUA_PELO_WA_API_TOKEN';\nconst H_CRM = { 'Content-Type': 'application/json', 'x-webhook-token': WA_TOKEN };\nconst H_EVO = { 'Content-Type': 'application/json', apikey: EVO_KEY };\n\nconst http = async (o) => this.helpers.httpRequest(o);\nconst res = await http({ method: 'GET', url: CRM + '/api/wa/birthdays', headers: H_CRM });\nconst items = res.items || [];\nconst out = [];\nfor (const it of items) {\n  const first = String(it.name || '').split(' ')[0] || 'você';\n  const msg = 'Feliz aniversário, ' + first + '! 🎉 A equipe da Lovet Distribuidora deseja um dia incrível pra você. Qualquer coisa que precisar, é só chamar por aqui 😊';\n  try {\n    const sent = await http({ method: 'POST', url: EVOLUTION + '/message/sendText/' + INSTANCE, headers: H_EVO, body: { number: it.phone, text: msg } });\n    await http({ method: 'POST', url: CRM + '/api/wa/birthday-sent', headers: H_CRM, body: { contactId: it.contactId } });\n    out.push({ json: { phone: it.phone, msg, sent: true } });\n  } catch (e) {\n    out.push({ json: { phone: it.phone, error: String(e) } });\n  }\n  await new Promise(r => setTimeout(r, 4000));\n}\nreturn out.length ? out : [{ json: { note: 'sem aniversariantes hoje' } }];\n"
+      },
+      "id": "code-bday-1",
+      "name": "Enviar mensagens de aniversário",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Todo dia às 9h": {
+      "main": [
+        [
+          {
+            "node": "Enviar mensagens de aniversário",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

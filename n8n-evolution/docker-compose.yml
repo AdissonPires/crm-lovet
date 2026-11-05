@@ -1,0 +1,254 @@
+services:
+  # ─────────────────────────────────────────────
+  # Banco de dados compartilhado (n8n + Evolution)
+  # ─────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: postgres
+    restart: always
+    ports:
+      # Apenas loopback do host — ferramentas locais (drizzle-kit, psql) precisam
+      # alcancar o banco. Nao expor em 0.0.0.0.
+      # Porta 5433 no host: a 5432 e do PostgreSQL 14 do Homebrew, de outro projeto.
+      # Dentro da rede Docker o acesso continua sendo postgres:5432.
+      - "127.0.0.1:5433:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
+
+  # ─────────────────────────────────────────────
+  # Redis (cache/filas para n8n e Evolution)
+  # ─────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - app-net
+
+  # ─────────────────────────────────────────────
+  # Evolution API (WhatsApp)
+  # ─────────────────────────────────────────────
+  evolution-api:
+    # Versao FIXA, mesmo motivo do n8n: a sessao do WhatsApp e o webhook do
+    # chatbot dependem desta API, e uma troca de versao maior num rebuild
+    # derrubaria a integracao sem aviso.
+    image: evoapicloud/evolution-api:v2.3.7
+    container_name: evolution-api
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+    environment:
+      # --- Servidor ---
+      SERVER_URL: ${EVOLUTION_SERVER_URL}
+      AUTHENTICATION_API_KEY: ${EVOLUTION_API_KEY}
+      # --- Banco de dados (PostgreSQL) ---
+      DATABASE_ENABLED: "true"
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_URI: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/evolution
+      DATABASE_SAVE_DATA_INSTANCE: "true"
+      DATABASE_SAVE_DATA_NEW_MESSAGE: "true"
+      DATABASE_SAVE_MESSAGE_UPDATE: "true"
+      DATABASE_SAVE_DATA_CONTACTS: "true"
+      DATABASE_SAVE_DATA_CHATS: "true"
+      # --- Cache (Redis) ---
+      CACHE_REDIS_ENABLED: "true"
+      CACHE_REDIS_URI: redis://redis:6379/1
+      CACHE_REDIS_PREFIX_KEY: evolution
+      CACHE_LOCAL_ENABLED: "false"
+      # --- Webhook global (opcional, aponta pro n8n) ---
+      WEBHOOK_GLOBAL_ENABLED: "false"
+      # --- Logs ---
+      LOG_LEVEL: ERROR
+      LOG_COLOR: "true"
+    volumes:
+      - evolution_instances:/evolution/instances
+    networks:
+      - app-net
+
+  # ─────────────────────────────────────────────
+  # n8n (automação de workflows)
+  # ─────────────────────────────────────────────
+  n8n:
+    # Versao FIXA de proposito. Com :latest, um re-pull trouxe o n8n 2.x, que
+    # mudou o modelo de ativacao (draft/published) e deixou os workflows
+    # importados como nao publicados. Subir de versao maior aqui e decisao
+    # consciente, com migracao dos workflows — nao efeito colateral de rebuild.
+    image: n8nio/n8n:1.119.2
+    container_name: n8n
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "5678:5678"
+    environment:
+      # --- Banco de dados ---
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: ${POSTGRES_USER}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
+      # --- Acesso / URL ---
+      N8N_HOST: ${N8N_HOST}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: ${N8N_PROTOCOL}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL}
+      N8N_EDITOR_BASE_URL: ${N8N_WEBHOOK_URL}
+      # --- Segurança ---
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
+      # Permite acesso via http://localhost (necessario p/ Safari em ambiente local)
+      N8N_SECURE_COOKIE: "false"
+      N8N_BASIC_AUTH_ACTIVE: "true"
+      N8N_BASIC_AUTH_USER: ${N8N_BASIC_AUTH_USER}
+      N8N_BASIC_AUTH_PASSWORD: ${N8N_BASIC_AUTH_PASSWORD}
+      # --- Execucao (modo normal: o proprio n8n processa; sem worker separado) ---
+      EXECUTIONS_MODE: regular
+      # --- Diversos ---
+      GENERIC_TIMEZONE: ${TZ}
+      TZ: ${TZ}
+      N8N_RUNNERS_ENABLED: "true"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - app-net
+
+  # ─────────────────────────────────────────────
+  # CRM (Next.js) — modulo comercial do ecossistema
+  # ─────────────────────────────────────────────
+  lovet-crm:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+      args:
+        APP: crm
+    container_name: lovet-crm
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      evolution-api:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    environment:
+      TZ: ${TZ}
+      # Postgres do stack, schema "crm". Substituiu o PGlite na Fase 1:
+      DATABASE_URL: ${CRM_DATABASE_URL}
+      # Token que o n8n usa para chamar as rotas /api do CRM
+      WA_API_TOKEN: ${WA_API_TOKEN}
+      # Envio de WhatsApp (o CRM tambem consegue enviar direto pela Evolution)
+      EVOLUTION_API_URL: http://evolution-api:8080
+      EVOLUTION_API_KEY: ${EVOLUTION_API_KEY}
+      EVOLUTION_INSTANCE: principal
+      # Desliga o chatbot embutido do CRM — quem responde e o n8n
+      WHATSAPP_CHATBOT: "off"
+      # Transcricao de audio: o n8n nao consegue montar o multipart pro
+      # Whisper direto (ver /api/wa/transcribe), entao repassa pra ca.
+      WHISPER_URL: http://whisper:9000
+      # IA do CRM (agentes internos) usa o Ollama do host
+      OLLAMA_URL: http://host.docker.internal:11434
+      OLLAMA_MODEL: llama3.1:8b
+      # Atribuicao automatica de origem do lead (Instagram/Facebook Lead Ads e
+      # Google Ads). Vazio ate a conta em cada plataforma ser criada; as rotas
+      # /api/leads/meta e /api/leads/google-ads recusam a chamada sem isso.
+      META_VERIFY_TOKEN: ${META_VERIFY_TOKEN:-}
+      META_PAGE_ACCESS_TOKEN: ${META_PAGE_ACCESS_TOKEN:-}
+      GOOGLE_ADS_WEBHOOK_KEY: ${GOOGLE_ADS_WEBHOOK_KEY:-}
+      # Envio de relatorio/nota fiscal por email (SMTP generico — Gmail exige
+      # senha de app, nao a senha normal da conta). Vazio ate ser configurado;
+      # a tela de relatorios mostra o erro exato em vez de fingir que enviou.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      # Imagem/video anexado em campanha de WhatsApp vai pra este volume, nao
+      # pro banco.
+      ATTACHMENTS_DIR: /data/attachments
+    volumes:
+      - crm_attachments:/data/attachments
+    # host.docker.internal resolvido explicitamente pelo gateway.
+    #
+    # A resolução automática do Docker Desktop parou de funcionar depois de um
+    # restart: o container passou a recusar a conexão em 1 segundo, e o sintoma
+    # chegava na tela como "Ollama não respondeu" — mesmo com o Ollama de pé,
+    # escutando em 0.0.0.0 e respondendo no host.
+    #
+    # Declarar o gateway não depende dessa resolução, e de quebra faz funcionar
+    # em Linux, onde host.docker.internal não existe por padrão.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - app-net
+    # Confere o banco, nao so "o processo respondeu" — um Postgres derrubado
+    # (ja aconteceu nesta maquina, disco cheio) deixa o container "Up" no
+    # `docker ps` mesmo sem conseguir servir uma pagina sequer.
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ─────────────────────────────────────────────
+  # Whisper (transcricao de audios do WhatsApp)
+  # ─────────────────────────────────────────────
+  whisper:
+    image: onerahmet/openai-whisper-asr-webservice:latest
+    container_name: whisper
+    restart: always
+    environment:
+      ASR_ENGINE: faster_whisper
+      # large-v3-turbo
+      # (809M) entrega qualidade perto do large-v3 por uma fração do tempo, o
+      # que importa porque aqui não há GPU no container — é CPU.
+      ASR_MODEL: large-v3-turbo
+      # O modelo é DESCARREGADO quando fica ocioso, de propósito.
+      #
+      # Já tentei o contrário (MODEL_IDLE_TIMEOUT: 0) para poupar o tempo de
+      # recarga, e foi troca ruim nesta máquina: large-v3-turbo ocupa ~1,5 GB e
+      # ficava preso para sempre, num host de 16 GB que já opera perto do
+      # limite. Reunião acontece algumas vezes por dia; RAM presa é o tempo
+      # todo. Assim o custo é uma recarga por ata, e não 1,5 GB permanentes.
+      MODEL_IDLE_TIMEOUT: 300
+    networks:
+      - app-net
+
+volumes:
+  postgres_data:
+  redis_data:
+  evolution_instances:
+  n8n_data:
+  crm_attachments:
+
+networks:
+  app-net:
+    driver: bridge

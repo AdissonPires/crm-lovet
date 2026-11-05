@@ -1,0 +1,19 @@
+{
+  "name": "lovet-crm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lovet Distribuidora - CRM comercial",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev:crm",
+    "dev:crm": "npm run dev --workspace @lovet/crm",
+    "build": "npm run build --workspaces --if-present",
+    "build:crm": "npm run build --workspace @lovet/crm",
+    "lint": "npm run lint --workspaces --if-present",
+    "db:push": "npm run db:push --workspace @lovet/crm",
+    "db:seed": "npm run db:seed --workspace @lovet/crm"
+  }
+}

@@ -1,0 +1,61 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# Monorepo: padroes sem barra inicial para casar em qualquer workspace
+# (apps/*, packages/*), nao somente na raiz.
+
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+coverage/
+
+# next.js
+.next/
+out/
+
+# production
+build/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+# ...exceto o exemplo, que e documentacao e nao contem segredo
+!.env.example
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# banco local PGlite
+pgdata/
+pgdata.corrompido.bak/
+pgdata.backup-*/
+
+# worktrees de execução de planos (superpowers)
+.worktrees/
+
+# anexos locais (mídia de campanha/reunião gravada em disco)
+.attachments/
+# configuração local do Claude Code
+.claude/settings.local.json
+# QR de pareamento do WhatsApp (gerado localmente, expira)
+n8n-evolution/qrcode-*.png

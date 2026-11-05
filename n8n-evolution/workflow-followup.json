@@ -1,0 +1,57 @@
+{
+  "name": "Follow-up 3 dias - Lovet Distribuidora",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "hoursInterval": 1
+            }
+          ]
+        }
+      },
+      "id": "sch-2",
+      "name": "A cada 1h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const EVOLUTION = 'http://evolution-api:8080';\nconst EVO_KEY = 'SUBSTITUA_PELA_EVOLUTION_API_KEY';\nconst INSTANCE = 'principal';\nconst CRM = 'http://lovet-crm:3000';\nconst WA_TOKEN = 'SUBSTITUA_PELO_WA_API_TOKEN';\nconst OLLAMA = 'http://host.docker.internal:11434';\nconst MODEL = 'llama3.1:8b';\nconst H_JSON = { 'Content-Type': 'application/json' };\nconst H_CRM = { 'Content-Type': 'application/json', 'x-webhook-token': WA_TOKEN };\nconst H_EVO = { 'Content-Type': 'application/json', apikey: EVO_KEY };\n\nconst http = async (o) => this.helpers.httpRequest(o);\nconst res = await http({ method: 'GET', url: CRM + '/api/wa/followups', headers: H_CRM });\nconst items = res.items || [];\nconst out = [];\n// Mensagem, número (instância do gestor) e IA vêm do CRM — editáveis pelo gestor\n// em WhatsApp → Follow-up (lib/followupConfig.ts). Aqui só se envia.\nconst INSTANCIA = res.instancia || INSTANCE;\nconst primeiroNome = (nome) => { const p = String(nome || '').trim().split(/\\s+/)[0] || ''; return p ? ' ' + p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : ''; };\nfor (const it of items) {\n  // CRM antigo (sem mensagem na resposta): texto padrão da Lovet — nunca envia vazio.\n  const padrao = 'Oi' + primeiroNome(it.name) + '! Passando pra saber se ficou alguma dúvida sobre o seu pedido 😊 Posso te ajudar a finalizar?';\n  let msg = it.mensagem || padrao;\n  if (res.usarIa && res.instrucaoIa) {\n    try {\n      const ai = await http({ method: 'POST', url: OLLAMA + '/api/chat', headers: H_JSON, body: { model: MODEL, stream: false, options: { temperature: 0.6 }, messages: [{ role: 'system', content: res.instrucaoIa }, { role: 'user', content: 'Cliente: ' + it.name + '. Resumo da conversa: ' + (it.history || []).map(m => (m.direction === 'in' ? 'Cliente' : 'Lovet') + ': ' + m.body).join(' | ') }] } });\n      msg = String(ai.message?.content || '').trim() || it.mensagem || padrao;\n    } catch (e) {\n      msg = it.mensagem || padrao;\n    }\n  }\n  if (!msg) continue;\n  const sent = await http({ method: 'POST', url: EVOLUTION + '/message/sendText/' + INSTANCIA, headers: H_EVO, body: { number: it.phone, text: msg } });\n  await http({ method: 'POST', url: CRM + '/api/wa/outbound', headers: H_CRM, body: { conversationId: it.conversationId, text: msg, providerMessageId: sent?.key?.id } });\n  await http({ method: 'POST', url: CRM + '/api/wa/followup-sent', headers: H_CRM, body: { conversationId: it.conversationId } });\n  out.push({ json: { phone: it.phone, msg } });\n  await new Promise(r => setTimeout(r, 4000));\n}\nreturn out.length ? out : [{ json: { note: 'sem follow-ups pendentes' } }];\n\n"
+      },
+      "id": "code-2",
+      "name": "Enviar follow-ups",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "A cada 1h": {
+      "main": [
+        [
+          {
+            "node": "Enviar follow-ups",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "id": "e49SnRqCENZaOgIm"
+}

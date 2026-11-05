@@ -1,0 +1,57 @@
+{
+  "name": "Campanhas WhatsApp - Lovet Distribuidora",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 2
+            }
+          ]
+        }
+      },
+      "id": "sch-3",
+      "name": "A cada 2min",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const EVOLUTION = 'http://evolution-api:8080';\nconst EVO_KEY = 'SUBSTITUA_PELA_EVOLUTION_API_KEY';\nconst INSTANCE = 'principal';\nconst CRM = 'http://lovet-crm:3000';\nconst WA_TOKEN = 'SUBSTITUA_PELO_WA_API_TOKEN';\nconst OLLAMA = 'http://host.docker.internal:11434';\nconst MODEL = 'llama3.1:8b';\nconst H_JSON = { 'Content-Type': 'application/json' };\nconst H_CRM = { 'Content-Type': 'application/json', 'x-webhook-token': WA_TOKEN };\nconst H_EVO = { 'Content-Type': 'application/json', apikey: EVO_KEY };\n\nconst http = async (o) => this.helpers.httpRequest(o);\nconst res = await http({ method: 'GET', url: CRM + '/api/wa/campaigns/pending', headers: H_CRM });\nconst items = res.items || [];\nconst out = [];\nfor (const it of items) {\n  try {\n    // Com midia (imagem/video), manda pelo sendMedia com a URL interna do\n    // CRM; sem midia, mantem o sendText de sempre.\n    const sent = it.mediaUrl\n      ? await http({ method: 'POST', url: EVOLUTION + '/message/sendMedia/' + INSTANCE, headers: H_EVO, body: { number: it.phone, mediatype: it.mediaType, media: it.mediaUrl, caption: it.text } })\n      : await http({ method: 'POST', url: EVOLUTION + '/message/sendText/' + INSTANCE, headers: H_EVO, body: { number: it.phone, text: it.text } });\n    await http({ method: 'POST', url: CRM + '/api/wa/campaigns/recipient-sent', headers: H_CRM, body: { recipientId: it.recipientId, providerMessageId: sent?.key?.id } });\n    out.push({ json: { phone: it.phone, status: 'sent' } });\n  } catch (e) {\n    await http({ method: 'POST', url: CRM + '/api/wa/campaigns/recipient-sent', headers: H_CRM, body: { recipientId: it.recipientId, error: String(e.message || e) } });\n    out.push({ json: { phone: it.phone, status: 'failed' } });\n  }\n  await new Promise(r => setTimeout(r, 9000)); // intervalo anti-bloqueio\n}\nreturn out.length ? out : [{ json: { note: 'sem envios pendentes' } }];\n\n"
+      },
+      "id": "code-3",
+      "name": "Disparar campanhas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "A cada 2min": {
+      "main": [
+        [
+          {
+            "node": "Disparar campanhas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {},
+  "id": "SjTaSIXB69TeJSoq"
+}

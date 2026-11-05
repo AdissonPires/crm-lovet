@@ -1,0 +1,16 @@
+node_modules
+**/node_modules
+**/.next
+**/.attachments
+**/*.tsbuildinfo
+.env*
+**/.env*
+!.env.example
+*.pdf
+propostas
+n8n-evolution
+docker
+docs
+.claude
+.DS_Store
+**/.DS_Store

@@ -1,0 +1,21 @@
+services:
+  lovet-crm:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - lovet_pgdata:/app/pgdata
+    environment:
+      # Descomente/edite conforme necessário — sem elas o app roda em
+      # modo simulado (WhatsApp) e usa Ollama local (IA).
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OLLAMA_URL=${OLLAMA_URL:-}
+      - OLLAMA_MODEL=${OLLAMA_MODEL:-}
+      - EVOLUTION_API_URL=${EVOLUTION_API_URL:-}
+      - EVOLUTION_API_KEY=${EVOLUTION_API_KEY:-}
+      - EVOLUTION_INSTANCE=${EVOLUTION_INSTANCE:-}
+      - PRESALES_WEBHOOK_TOKEN=${PRESALES_WEBHOOK_TOKEN:-}
+    restart: unless-stopped
+
+volumes:
+  lovet_pgdata:

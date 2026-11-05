@@ -1,0 +1,56 @@
+{
+  "name": "Follow-up 30 dias (pós-entrada) - Lovet Distribuidora",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 10 * * *"
+            }
+          ]
+        }
+      },
+      "id": "sch-30d-1",
+      "name": "Todo dia às 10h",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -260,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const EVOLUTION = 'http://evolution-api:8080';\nconst EVO_KEY = 'SUBSTITUA_PELA_EVOLUTION_API_KEY';\nconst INSTANCE = 'principal';\nconst CRM = 'http://lovet-crm:3000';\nconst WA_TOKEN = 'SUBSTITUA_PELO_WA_API_TOKEN';\nconst H_CRM = { 'Content-Type': 'application/json', 'x-webhook-token': WA_TOKEN };\nconst H_EVO = { 'Content-Type': 'application/json', apikey: EVO_KEY };\n\nconst http = async (o) => this.helpers.httpRequest(o);\nconst res = await http({ method: 'GET', url: CRM + '/api/wa/post-entry-followups', headers: H_CRM });\nconst items = res.items || [];\nconst out = [];\nconst INSTANCIA = res.instancia || INSTANCE;\nconst primeiroNome = (nome) => { const p = String(nome || '').trim().split(/\\s+/)[0] || ''; return p ? ' ' + p.charAt(0).toUpperCase() + p.slice(1).toLowerCase() : ''; };\nfor (const it of items) {\n  // Mensagem editável pelo gestor no CRM (WhatsApp → Follow-up); sai pelo número do gestor.\n  // CRM antigo (sem mensagem na resposta): texto padrão da Lovet — nunca envia vazio.\n  const msg = it.mensagem || ('Oi' + primeiroNome(it.name) + '! Já faz um mês desde que você falou com a Lovet Distribuidora. Ficou tudo certo com o seu pedido, ou posso te ajudar com alguma coisa?');\n  try {\n    const sent = await http({ method: 'POST', url: EVOLUTION + '/message/sendText/' + INSTANCIA, headers: H_EVO, body: { number: it.phone, text: msg } });\n    await http({ method: 'POST', url: CRM + '/api/wa/post-entry-followup-sent', headers: H_CRM, body: { leadId: it.leadId } });\n    out.push({ json: { phone: it.phone, msg, sent: true } });\n  } catch (e) {\n    out.push({ json: { phone: it.phone, error: String(e) } });\n  }\n  await new Promise(r => setTimeout(r, 4000));\n}\nreturn out.length ? out : [{ json: { note: 'sem follow-ups de 30 dias pendentes' } }];\n"
+      },
+      "id": "code-30d-1",
+      "name": "Enviar follow-up de 30 dias",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        40,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Todo dia às 10h": {
+      "main": [
+        [
+          {
+            "node": "Enviar follow-up de 30 dias",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "active": false,
+  "pinData": {}
+}

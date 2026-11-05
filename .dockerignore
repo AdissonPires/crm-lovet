@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+**/pgdata
+pgdata.corrompido.bak
+.git
+docs
+**/.env*.local
+**/npm-debug.log*
+**/.DS_Store
