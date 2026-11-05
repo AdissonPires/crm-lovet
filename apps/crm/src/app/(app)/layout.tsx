@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Target, Users, CheckSquare, LogOut, MessageCircle, Mic,
   Percent, FileSignature,
   Filter, Megaphone, PieChart,
-  MessageSquareHeart, FileBarChart, UserCog, KeyRound, Menu,
+  MessageSquareHeart, FileBarChart, UserCog, KeyRound, Menu, BarChart3, ShoppingCart, FileText, Package,
 } from "lucide-react";
 import { licenseMessage } from "@lovet/auth";
 import { getSessionUser, type SessionUser } from "@/lib/auth";
@@ -46,7 +46,11 @@ const navGroups: NavGroup[] = [
     module: "Vendas",
     items: [
       { href: "/pre-vendas", label: "Pré-vendas (SDR)", Icon: Filter, needs: "view_presales" },
+      { href: "/indicadores", label: "Indicadores", Icon: BarChart3, needs: "view_team_dashboard" },
       { href: "/pipeline", label: "Pipeline de Vendas", Icon: Target, needs: "view_pipeline" },
+      { href: "/cotacoes", label: "Cotações", Icon: FileText, needs: "view_pipeline" },
+      { href: "/pedidos", label: "Pedidos", Icon: ShoppingCart, needs: "view_pipeline" },
+      { href: "/produtos", label: "Produtos", Icon: Package, needs: "view_pipeline" },
       { href: "/feedmeet", label: "FeedMeet", Icon: Mic, needs: "view_pipeline" },
       { href: "/whatsapp", label: "WhatsApp", Icon: MessageCircle, needs: "use_whatsapp" },
       { href: "/campanhas", label: "Campanhas WhatsApp", Icon: Megaphone, needs: "use_whatsapp" },

@@ -128,7 +128,7 @@ export default async function ClientesPage({
                     <div className="h-8 w-8 rounded-lg bg-zinc-100 flex items-center justify-center shrink-0">
                       {r.industry === "Pessoa jurídica" ? <Building2 className="h-4 w-4 text-zinc-400" /> : <User className="h-4 w-4 text-zinc-400" />}
                     </div>
-                    <span className="font-semibold text-zinc-900">{r.name}</span>
+                    <Link href={`/empresas/${r.id}`} className="font-semibold text-zinc-900 hover:text-brand-700">{r.name}</Link>
                   </div>
                 </td>
                 <td className="px-5 py-3.5 text-zinc-500 tabular-nums whitespace-nowrap">{formatarDocumento(r.documento)}</td>

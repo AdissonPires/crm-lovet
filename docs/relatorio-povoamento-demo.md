@@ -31,8 +31,8 @@ Novas tabelas: `catalog_products`, `sales_quotes`, `sales_quote_items`, `sales_o
 `sales_targets`, `sales_regions`, `campaign_results`; todas com `is_synthetic`, `origin`, `batch`, `external_id`.
 
 **Restrições**
-- As tabelas novas **não têm telas**: pedidos, cotações, catálogo, metas, ABC e RFM só são consultáveis por SQL
-  (`scripts/indicadores-demo-lovet.sql`) ou pelos campos personalizados do cliente.
+- Telas criadas depois da carga: **Indicadores** (`/indicadores`), **Pedidos**, **Cotações**, **Produtos** e a **ficha 360 do cliente** (`/empresas/<id>`),
+  todas no menu Vendas. Metas aparecem no gráfico de faturamento; ABC/RFM no painel e na ficha do cliente.
 - Os dashboards atuais usam oportunidades, contratos, atividades, tarefas e tickets.
 - O dashboard mede "Vendas (Mês)" pela data de hoje; como o histórico termina em 31/10/2026, o mês corrente mostra R$ 0.
 - O Pipeline mostra no máximo os últimos 3 meses de oportunidades criadas.
