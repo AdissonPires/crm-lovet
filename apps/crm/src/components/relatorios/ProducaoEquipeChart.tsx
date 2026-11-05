@@ -44,7 +44,7 @@ export function ProducaoEquipeChart({ semanas }: { semanas: ProducaoSemana[] }) 
         return (
           <g key={s.semana}>
             <title>{`Semana de ${s.label}: ${s.concluidas} concluídas${s.meta !== null ? ` (meta ${s.meta})` : ""}`}</title>
-            <rect x={cx(i) - barW / 2} y={PAD_TOP + areaH - h} width={barW} height={h} rx={3} fill={bateu ? "#10b981" : "#0475d7"} />
+            <rect x={cx(i) - barW / 2} y={PAD_TOP + areaH - h} width={barW} height={h} rx={3} fill={bateu ? "#009949" : "#a3b1a8"} />
             <text x={cx(i)} y={PAD_TOP + areaH - h - 5} textAnchor="middle" className="fill-zinc-600 text-[10px] font-semibold">
               {s.concluidas}
             </text>

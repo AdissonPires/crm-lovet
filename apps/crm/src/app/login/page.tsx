@@ -19,7 +19,7 @@ export default async function LoginPage({
     <main className="min-h-screen flex flex-col lg:flex-row bg-noturno">
       {/* ── Autenticação ─────────────────────────────────────────────── */}
       <section className="relative flex w-full flex-1 flex-col justify-between px-6 py-8 sm:px-12 lg:w-[42%] lg:flex-none lg:px-14 xl:px-20">
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_0%_0%,rgba(4,117,215,0.22),transparent_70%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_0%_0%,rgba(0,153,73,0.22),transparent_70%)]" />
 
         <div className="relative flex flex-col items-start">
           <BrandLogo className="h-[44px] w-auto text-white" />
@@ -66,19 +66,19 @@ export default async function LoginPage({
       </section>
 
       {/* ── Painel informativo ───────────────────────────────────────── */}
-      <aside className="relative hidden overflow-hidden border-l border-white/10 bg-gradient-to-br from-noturno via-brand-900 to-[#0b4a63] lg:flex lg:w-[58%] lg:flex-col lg:justify-center lg:px-12 xl:px-16">
-        {/* Textura sutil: grade de pontos + brilhos azul/ciano (sem imagem, pra não competir com a marca). */}
+      <aside className="relative hidden overflow-hidden border-l border-white/10 bg-gradient-to-br from-noturno via-brand-900 to-[#0f3d2a] lg:flex lg:w-[58%] lg:flex-col lg:justify-center lg:px-12 xl:px-16">
+        {/* Textura sutil: grade de pontos + brilhos verdes (sem imagem, pra não competir com a marca). */}
         <div
           aria-hidden
-          className="absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(125,211,252,0.35)_1px,transparent_1px)] [background-size:28px_28px] [mask-image:radial-gradient(70%_70%_at_80%_20%,black,transparent)]"
+          className="absolute inset-0 opacity-[0.35] [background-image:radial-gradient(rgba(110,231,160,0.30)_1px,transparent_1px)] [background-size:28px_28px] [mask-image:radial-gradient(70%_70%_at_80%_20%,black,transparent)]"
         />
         <div
           aria-hidden
-          className="absolute inset-0 bg-[radial-gradient(45%_40%_at_90%_0%,rgba(4,117,215,0.35),transparent_70%),radial-gradient(40%_40%_at_10%_100%,rgba(34,211,238,0.12),transparent_70%)]"
+          className="absolute inset-0 bg-[radial-gradient(45%_40%_at_90%_0%,rgba(0,153,73,0.30),transparent_70%),radial-gradient(40%_40%_at_10%_100%,rgba(74,222,128,0.10),transparent_70%)]"
         />
 
         <div className="relative mx-auto w-full max-w-3xl">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-sky-300/30 bg-sky-300/10 px-3 py-1 text-xs font-semibold text-sky-200">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-300/10 px-3 py-1 text-xs font-semibold text-emerald-200">
             <Sparkles className="h-3.5 w-3.5" strokeWidth={2} />
             Lovet Distribuidora
           </span>
@@ -96,9 +96,9 @@ export default async function LoginPage({
             {CARDS.map(({ Icon, titulo, descricao }) => (
               <article
                 key={titulo}
-                className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 transition-colors hover:border-sky-300/30 hover:bg-white/[0.08]"
+                className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 transition-colors hover:border-emerald-300/30 hover:bg-white/[0.08]"
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/25 text-sky-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand/25 text-emerald-200">
                   <Icon className="h-5 w-5" strokeWidth={1.75} />
                 </div>
                 <h3 className="mt-4 text-[15px] font-semibold text-white">{titulo}</h3>

@@ -1,30 +1,31 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f9fc;
+  --background: #f6f9f7;
   --foreground: #18181b;
-  /* Paleta base do CRM. A rampa 50-900 é ancorada no azul primário: 500 é o
-     hex exato, e os demais mantêm o mesmo matiz variando luminosidade, para
-     haver contraste correto tanto em fundo claro (50-200) quanto em estado
-     ativo (700-900). Troque estes tokens para aplicar a identidade visual da
-     Lovet Distribuidora.
+  /* Paleta da Lovet Distribuidora, extraída do logo: verde #009949 (coração)
+     e grafite #363533 (texto). A rampa 50-900 é ancorada no verde da marca:
+     500 é o hex exato, e os demais mantêm o mesmo matiz variando luminosidade,
+     para haver contraste correto tanto em fundo claro (50-200) quanto em
+     estado ativo (700-900). Barra lateral e telas escuras usam o grafite
+     esverdeado (900 / --noturno).
 
      Os tokens se chamam `brand-*` de propósito: nome de cliente no token
      obriga a reescrever centenas de arquivos num rebrand. */
-  --brand: #0475d7;
-  --brand-50: hsl(210 95% 97%);
-  --brand-100: hsl(210 95% 93%);
-  --brand-200: hsl(210 92% 85%);
-  --brand-300: hsl(210 90% 73%);
-  --brand-400: hsl(210 90% 60%);
-  --brand-500: #0475d7;
-  --brand-600: hsl(212 96% 38%);
-  --brand-700: #034aa6;
-  --brand-800: hsl(214 96% 26%);
-  --brand-900: hsl(216 96% 19%);
-  /* Verde institucional de apoio — usado em confirmação e indicador positivo. */
-  --brand-accent: #00c07f;
-  --noturno: #052a4e;
+  --brand: #009949;
+  --brand-50: hsl(150 60% 96%);
+  --brand-100: hsl(150 55% 91%);
+  --brand-200: hsl(150 50% 81%);
+  --brand-300: hsl(151 48% 64%);
+  --brand-400: hsl(151 62% 42%);
+  --brand-500: #009949;
+  --brand-600: hsl(152 100% 28%);
+  --brand-700: hsl(153 100% 22%);
+  --brand-800: hsl(154 70% 16%);
+  --brand-900: hsl(150 22% 15%);
+  /* Apoio quente para destaques que precisam contrastar com o verde. */
+  --brand-accent: #f5a524;
+  --noturno: #1c211e;
   /* Tema padrão é o claro (o escuro é opt-in, ver bloco no fim do arquivo). Sem isso, navegadores (Safari em
      especial) pintam a área da página com o "canvas" escuro do sistema
      operacional antes/ao redor do conteúdo quando o SO está em modo
@@ -33,7 +34,7 @@
 }
 
 html {
-  background: #f7f9fc;
+  background: #f6f9f7;
 }
 
 @theme inline {

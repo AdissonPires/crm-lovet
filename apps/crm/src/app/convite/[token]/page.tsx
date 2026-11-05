@@ -55,7 +55,7 @@ export default async function ConvitePage({ params }: { params: Promise<{ token:
           <div className="mt-10 rounded-2xl border border-white/10 bg-white/[0.05] p-6">
             <h1 className="text-lg font-bold text-white">Convite indisponível</h1>
             <p className="mt-2 text-sm text-white/65">Este link expirou, já foi usado ou foi cancelado. Peça um novo convite a quem administra o CRM.</p>
-            <a href="/login" className="mt-4 inline-block text-sm font-semibold text-sky-300 hover:text-sky-200">Ir para o login</a>
+            <a href="/login" className="mt-4 inline-block text-sm font-semibold text-emerald-300 hover:text-emerald-200">Ir para o login</a>
           </div>
         )}
       </div>

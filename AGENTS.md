@@ -17,7 +17,7 @@ Guia rápido para agentes e desenvolvedores. Detalhes de instalação estão no 
 - Texto de interface e comentários em português do Brasil.
 - Segredos só por variável de ambiente; nunca em código, seed ou documentação.
 - Catálogo de produtos e tabela de preços: `apps/crm/src/lib/produtos.ts` (edite para o catálogo real).
-- Tokens de cor `brand-*` em `apps/crm/src/app/globals.css` — ajuste para a identidade visual da Lovet.
+- Tokens de cor `brand-*` em `apps/crm/src/app/globals.css`: verde #009949 e grafite #363533, extraídos do logo da Lovet.
 
 ## Comandos
 
