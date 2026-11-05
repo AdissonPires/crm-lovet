@@ -35,6 +35,9 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA crm
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO crm_app;
 ALTER DEFAULT PRIVILEGES IN SCHEMA shared
   GRANT SELECT ON TABLES TO crm_app;
+-- As tabelas do shared ja existem (push do shared roda antes): o default acima
+-- so vale para tabelas futuras, entao concede leitura nas atuais tambem.
+GRANT SELECT ON ALL TABLES IN SCHEMA shared TO crm_app;
 
 -- ── Sessao de login: excecao pontual ao "shared e so leitura" ──────────────
 -- Autenticar e a unica escrita que os modulos fazem em shared — criar sessao
