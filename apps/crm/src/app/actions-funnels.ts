@@ -39,12 +39,6 @@ const DEFAULT_STAGES = {
     { name: "Parceiro ativado", probability: 100, slaDays: null, isWon: true },
     { name: "Não avançou", probability: 0, slaDays: null, isLost: true },
   ],
-  installation: [
-    { name: "Preparação", probability: 0, slaDays: 10 },
-    { name: "Em produção", probability: 0, slaDays: 15 },
-    { name: "Entrega agendada", probability: 0, slaDays: 7 },
-    { name: "Concluído", probability: 100, slaDays: null, isWon: true },
-  ],
   // O funil de SDR usa as etapas fixas de presalesFunnel.ts, que continuam
   // sendo a fonte da verdade das regras (SLA, campos obrigatórios). Aqui elas
   // só são materializadas para o funil ter colunas próprias.
@@ -60,7 +54,7 @@ const DEFAULT_STAGES = {
 /** Conjunto de etapas com que o funil nasce. */
 export type StageTemplate = keyof typeof DEFAULT_STAGES;
 /** `pipelines.kind` — o enum do banco, que governa o comportamento do funil. */
-type FunnelKind = "sales" | "installation" | "presales";
+type FunnelKind = "sales" | "presales";
 
 /**
  * `template` é separado de `kind` porque existem dois funis de venda com

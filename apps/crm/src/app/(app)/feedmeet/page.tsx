@@ -14,7 +14,7 @@ import type { MeetingAnalysis } from "@/lib/ai";
  */
 export default async function FeedMeetPage() {
   const user = await requireUser();
-  if (!can(user.role, "view_pipeline")) redirect("/projetos");
+  if (!can(user.role, "view_pipeline")) redirect("/conta/senha");
 
   const atas = await carregarAtas(user.workspaceId);
   const card = "rounded-2xl bg-white border border-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-14px_rgba(0,0,0,0.12)]";

@@ -79,7 +79,7 @@ export const moduleRoles = sharedSchema.table(
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
     module: text("module", { enum: ["crm"] }).notNull(),
-    // Vocabulario proprio de cada modulo (ex.: no CRM owner/manager/rep/sdr/installer;
+    // Vocabulario proprio de cada modulo (ex.: no CRM owner/manager/rep/sdr;
     // em outros modulos, o vocabulario deles).
     role: text("role").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

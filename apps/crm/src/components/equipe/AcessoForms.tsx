@@ -4,7 +4,7 @@ import { useActionState } from "react";
 import { KeyRound, UserCheck } from "lucide-react";
 import { darAcessoCrm, resetarSenhaCrm, trocarMinhaSenha, type EstadoAcao } from "@/app/actions-equipe";
 
-const PAPEL_LABEL: Record<string, string> = { owner: "Admin — dono da conta", sdr: "SDR", installer: "Técnico", viewer: "Leitura" };
+const PAPEL_LABEL: Record<string, string> = { owner: "Admin — dono da conta", sdr: "SDR", viewer: "Leitura" };
 
 const PAPEIS = [
   { valor: "rep", label: "Consultor(a)" },

@@ -449,19 +449,10 @@ export async function promoteToOpportunity(leadId: string) {
     }).returning();
   }
 
-  // Leva o local/consumo coletados na pré-venda para o cadastro do cliente.
-  if (lead.city || lead.avgMonthlyConsumptionKwh) {
-    const [site] = await db.select().from(s.sites)
-      .where(and(eq(s.sites.workspaceId, user.workspaceId), eq(s.sites.companyId, company.id)));
-    if (!site) {
-      await db.insert(s.sites).values({
-        workspaceId: user.workspaceId, companyId: company.id, contactId: contact.id,
-        address: lead.city ? `${lead.city}/${lead.state ?? ""}`.replace(/\/$/, "") : "A confirmar",
-        city: lead.city, state: lead.state ?? "SC",
-        utilityCompany: lead.utilityCompany ?? "CELESC", tariffClass: "B1",
-        avgMonthlyConsumptionKwh: lead.avgMonthlyConsumptionKwh,
-      });
-    }
+  // Leva a cidade coletada na pré-venda para o cadastro do cliente.
+  if (lead.city) {
+    await db.update(s.companies).set({ customFields: { cidade: lead.city, uf: lead.state ?? null } })
+      .where(eq(s.companies.id, company.id));
   }
 
   const estimate = estimateValor(lead, await carregarTabelaPrecos(user.workspaceId));

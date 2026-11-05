@@ -5,7 +5,7 @@ import { createCompany } from "@/app/actions-create";
 
 export default async function NovoClientePage() {
   const user = await requireUser();
-  if (!can(user.role, "manage_records")) redirect("/projetos");
+  if (!can(user.role, "manage_records")) redirect("/conta/senha");
 
   const input = "w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100";
   const label = "block text-xs font-medium text-zinc-500 mb-1";

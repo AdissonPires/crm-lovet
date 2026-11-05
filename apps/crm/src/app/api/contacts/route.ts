@@ -65,9 +65,8 @@ export async function POST(req: Request) {
     .where(and(eq(s.presalesLeads.workspaceId, workspace.id), eq(s.presalesLeads.phone, phone)));
 
   // O bot conversou com o cliente, então já houve contato. "qualified" (cidade
-  // + conta informadas) leva o lead para a coleta de fatura — a entrega ao
-  // vendedor ainda exige consumo em kWh, distribuidora e fatura, conferidos
-  // pelo SDR (ver src/lib/presalesFunnel.ts).
+  // informados) leva o lead para a coleta de dados — a entrega ao
+  // vendedor ainda exige os campos conferidos pelo SDR (ver src/lib/presalesFunnel.ts).
   const now = new Date();
   let leadId: string;
   if (existingLead) {

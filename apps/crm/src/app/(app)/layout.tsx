@@ -72,7 +72,7 @@ const navGroups: NavGroup[] = [
 
 const roleLabel: Record<string, string> = {
   owner: "Admin", admin: "Admin", manager: "Gestor(a)",
-  rep: "Consultor(a)", sdr: "Pré-vendas (SDR)", installer: "Técnico de campo", viewer: "Leitura",
+  rep: "Consultor(a)", sdr: "Pré-vendas (SDR)", viewer: "Leitura",
 };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {

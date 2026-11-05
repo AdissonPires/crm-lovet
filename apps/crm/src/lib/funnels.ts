@@ -11,7 +11,7 @@ import type { FunnelItem } from "@/components/funnels/FunnelPicker";
  */
 export async function loadFunnels(
   workspaceId: string,
-  kind: "sales" | "installation" | "presales",
+  kind: "sales" | "presales",
 ): Promise<FunnelItem[]> {
   const rows = await db
     .select({

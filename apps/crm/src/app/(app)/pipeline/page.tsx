@@ -29,7 +29,7 @@ export default async function PipelinePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const user = await requireUser();
-  if (!can(user.role, "view_pipeline")) redirect("/projetos");
+  if (!can(user.role, "view_pipeline")) redirect("/conta/senha");
 
   const sp = await searchParams;
   // Janela do funil: por padrão só o mês vigente (filtro de datas permite

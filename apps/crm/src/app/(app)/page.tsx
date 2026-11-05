@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { and, asc, desc, eq, gte, isNull, lt, sql } from "drizzle-orm";
 import {
   Users, UserPlus, Target, ShoppingBag, Megaphone, FileBarChart,
-  StickyNote, Phone, Sparkles, Settings2, Wrench,
+  StickyNote, Phone, Sparkles,
 } from "lucide-react";
 import { db, schema as s } from "@/db";
 import { requireUser } from "@/lib/auth";
@@ -32,14 +32,12 @@ const actMeta: Record<string, { Icon: ActivityRow["Icon"]; colorClass: string }>
   call_logged: { Icon: Phone, colorClass: "bg-sky-500" },
   stage_changed: { Icon: Target, colorClass: "bg-brand-600" },
   ai_suggestion: { Icon: Sparkles, colorClass: "bg-violet-500" },
-  project_created: { Icon: Settings2, colorClass: "bg-amber-500" },
-  installation_stage_changed: { Icon: Wrench, colorClass: "bg-emerald-500" },
 };
 
 export default async function DashboardPage() {
   const user = await requireUser();
   if (!can(user.role, "view_pipeline")) {
-    redirect(can(user.role, "view_presales") ? "/pre-vendas" : "/projetos");
+    redirect(can(user.role, "view_presales") ? "/pre-vendas" : "/conta/senha");
   }
   const wsId = user.workspaceId;
     // rep/viewer não têm view_team_dashboard: a agenda mostra só as tarefas deles.

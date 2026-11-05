@@ -91,38 +91,10 @@ export async function moveOpportunityStage(opportunityId: string, toStageId: str
     type: "stage_changed", payload: { to: toStage.name },
   });
 
-  // Ganhar NÃO cria projeto de instalação (workflow do CRM solar, não usado aqui).
-
   revalidatePath("/pipeline");
-  revalidatePath("/projetos");
   revalidatePath(`/oportunidades/${opportunityId}`);
 }
 
-export async function moveInstallationStage(projectId: string, toStageId: string) {
-  const user = await requireUser();
-  const [proj] = await db.select().from(s.installationProjects)
-    .where(and(eq(s.installationProjects.id, projectId), eq(s.installationProjects.workspaceId, user.workspaceId)));
-  if (!proj || proj.stageId === toStageId) return;
-
-  const [toStage] = await db.select().from(s.pipelineStages).where(eq(s.pipelineStages.id, toStageId));
-  if (!toStage) return;
-
-  await db.update(s.installationProjects).set({
-    stageId: toStageId,
-    stageEnteredAt: new Date(),
-    installationCompletedAt: toStage.isWon ? new Date() : proj.installationCompletedAt,
-    warrantyStartDate: toStage.isWon ? new Date() : proj.warrantyStartDate,
-  }).where(eq(s.installationProjects.id, projectId));
-
-  await db.insert(s.activities).values({
-    workspaceId: user.workspaceId, actorId: user.id, actorType: "user",
-    relatedToType: "opportunity", relatedToId: proj.opportunityId,
-    type: "installation_stage_changed", payload: { to: toStage.name },
-  });
-
-  revalidatePath("/projetos");
-  revalidatePath(`/oportunidades/${proj.opportunityId}`);
-}
 
 export async function addNote(opportunityId: string, text: string) {
   const user = await requireUser();

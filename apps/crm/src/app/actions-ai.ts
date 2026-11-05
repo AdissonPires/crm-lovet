@@ -15,9 +15,7 @@ export type AiResult = { ok: boolean; message: string };
  * cliente quer, precificado pela tabela de preços (lib/produtos.ts).
  *
  * Isto NÃO usa LLM de propósito: a proposta é aritmética
- * (quantidade × preço do produto), não um problema de dimensionamento. A versão
- * anterior chamava um agente de IA para escolher painel e inversor a partir do
- * consumo em kWh do telhado — herança do CRM solar, sem sentido aqui.
+ * (quantidade × preço do produto), não um problema de dimensionamento.
  */
 export async function gerarPropostaDeReferencia(opportunityId: string): Promise<AiResult> {
   const user = await requireUser();

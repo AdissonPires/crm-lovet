@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { and, asc, desc, eq } from "drizzle-orm";
 import {
-  ArrowRight, BadgeCheck, Check, FileText, Home, MessageCircle, Phone, Plus, Settings2, Sparkles, StickyNote, Target, User, UserCheck, Wrench, X,
+  ArrowRight, BadgeCheck, Check, FileText, MessageCircle, Phone, Plus, Sparkles, StickyNote, Target, User, UserCheck, X,
 } from "lucide-react";
 import { db, schema as s } from "@/db";
 import { requireUser } from "@/lib/auth";
@@ -48,16 +48,12 @@ export default async function OportunidadePage({ params }: { params: Promise<{ i
   const currentIdx = pathStages.findIndex((st) => st.id === opp.stageId);
   const nextStage = opp.status === "open" && currentIdx >= 0 ? pathStages[currentIdx + 1] : undefined;
 
-  const [acts, props, site, [project]] = await Promise.all([
+  const [acts, props] = await Promise.all([
     db.select({ act: s.activities, actorName: s.users.name }).from(s.activities)
       .leftJoin(s.users, eq(s.users.id, s.activities.actorId))
       .where(and(eq(s.activities.relatedToType, "opportunity"), eq(s.activities.relatedToId, id)))
       .orderBy(desc(s.activities.createdAt)),
     db.select().from(s.proposals).where(eq(s.proposals.opportunityId, id)).orderBy(asc(s.proposals.version)),
-    opp.companyId
-      ? db.select().from(s.sites).where(eq(s.sites.companyId, opp.companyId)).then((r) => r[0] ?? null)
-      : Promise.resolve(null),
-    db.select().from(s.installationProjects).where(eq(s.installationProjects.opportunityId, id)),
   ]);
   const [sourceLead] = await db.select({ lead: s.presalesLeads, sdrName: s.users.name }).from(s.presalesLeads)
     .leftJoin(s.users, eq(s.users.id, s.presalesLeads.ownerId))
@@ -87,8 +83,6 @@ export default async function OportunidadePage({ params }: { params: Promise<{ i
     call_logged: <Phone className="h-3.5 w-3.5" />,
     stage_changed: <Target className="h-3.5 w-3.5" />,
     ai_suggestion: <Sparkles className="h-3.5 w-3.5" />,
-    project_created: <Settings2 className="h-3.5 w-3.5" />,
-    installation_stage_changed: <Wrench className="h-3.5 w-3.5" />,
   };
 
   const card = "rounded-2xl bg-white border border-zinc-100 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-14px_rgba(0,0,0,0.12)]";
@@ -256,16 +250,6 @@ export default async function OportunidadePage({ params }: { params: Promise<{ i
             )}
           </div>
 
-          {site && (
-            <div className={`${card} p-5`}>
-              <div className="font-semibold text-sm text-zinc-800 mb-3 flex items-center gap-2">
-                <Home className="h-4 w-4 text-zinc-400" /> Localização do cliente
-              </div>
-              <div className="text-sm text-zinc-800">{site.address}</div>
-              <div className="text-xs text-zinc-500 mt-0.5">{site.city}/{site.state}</div>
-            </div>
-          )}
-
           {showFinancials && (
             <div className={`${card} p-5`}>
               <div className="font-semibold text-sm text-zinc-800 mb-3 flex items-center gap-2">
@@ -354,43 +338,6 @@ export default async function OportunidadePage({ params }: { params: Promise<{ i
             </div>
           )}
 
-          {project && (
-            <div className={`${card} p-5`}>
-              <div className="font-semibold text-sm text-zinc-800 mb-3 flex items-center gap-2">
-                <Wrench className="h-4 w-4 text-zinc-400" /> Projeto de instalação
-              </div>
-              <div className="text-xs space-y-2.5">
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Projeto/ART</span>
-                  <span className="font-semibold text-zinc-800">
-                    {project.permitStatus === "approved" ? "Aprovado" : project.permitStatus === "submitted" ? "Protocolado" : "Pendente"}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Concessionária</span>
-                  <span className="font-semibold text-zinc-800">
-                    {project.utilityApprovalStatus === "approved" ? "Homologado" : project.utilityApprovalStatus === "submitted" ? "Em análise" : "Pendente"}
-                  </span>
-                </div>
-                {project.installationScheduledAt && (
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Instalação</span>
-                    <span className="font-semibold text-zinc-800 tabular-nums">{dateBR(project.installationScheduledAt)}</span>
-                  </div>
-                )}
-                {project.warrantyStartDate && (
-                  <div className="flex justify-between">
-                    <span className="text-zinc-400">Garantia desde</span>
-                    <span className="font-semibold text-zinc-800 tabular-nums">{dateBR(project.warrantyStartDate)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span className="text-zinc-400">Na etapa atual há</span>
-                  <span className="font-semibold text-zinc-800">{daysSince(project.stageEnteredAt)} dias</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

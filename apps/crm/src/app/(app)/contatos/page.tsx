@@ -22,7 +22,7 @@ export default async function ContatosPage({
   const sp = await searchParams;
   const busca = typeof sp.q === "string" ? sp.q.trim() : "";
   const user = await requireUser();
-  if (!can(user.role, "view_pipeline")) redirect("/projetos");
+  if (!can(user.role, "view_pipeline")) redirect("/conta/senha");
 
   const rows = async <T,>(q: ReturnType<typeof sql>) => ((await db.execute(q)) as unknown as { rows: T[] }).rows;
   const digitos = busca.replace(/\D/g, "");

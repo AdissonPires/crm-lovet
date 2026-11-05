@@ -38,15 +38,13 @@ export async function createCompany(formData: FormData) {
 
   const address = String(formData.get("siteAddress") ?? "").trim();
   if (address) {
-    await db.insert(s.sites).values({
-      workspaceId: user.workspaceId,
-      companyId: company.id,
-      address,
-      city: String(formData.get("siteCity") ?? "") || null,
-      state: String(formData.get("siteState") ?? "") || "SC",
-      utilityCompany: "CELESC",
-      tariffClass: "B1",
-    });
+    await db.update(s.companies).set({
+      customFields: {
+        endereco: address,
+        cidade: String(formData.get("siteCity") ?? "") || null,
+        uf: String(formData.get("siteState") ?? "") || null,
+      },
+    }).where(eq(s.companies.id, company.id));
   }
 
   revalidatePath("/empresas");
@@ -54,7 +52,7 @@ export async function createCompany(formData: FormData) {
 }
 
 // Fluxo B2C de loja: um formulário único cria (ou reaproveita) o cliente,
-// o contato com telefone/CPF/nascimento, o local de instalação e a oportunidade.
+// o contato com telefone/CPF/nascimento, o endereço e a oportunidade.
 export async function createOpportunity(formData: FormData) {
   const user = await requireUser();
   if (!can(user.role, "manage_records")) throw new Error("FORBIDDEN");
@@ -115,20 +113,8 @@ export async function createOpportunity(formData: FormData) {
   }
 
   if (city) {
-    const [site] = await db.select().from(s.sites)
-      .where(and(eq(s.sites.workspaceId, user.workspaceId), eq(s.sites.companyId, company.id)));
-    if (!site) {
-      await db.insert(s.sites).values({
-        workspaceId: user.workspaceId,
-        companyId: company.id,
-        contactId: contact.id,
-        address: `${city}/${state}`,
-        city,
-        state,
-        utilityCompany: "CELESC",
-        tariffClass: "B1",
-      });
-    }
+    await db.update(s.companies).set({ customFields: { cidade: city, uf: state || null } })
+      .where(eq(s.companies.id, company.id));
   }
 
   const [opp] = await db.insert(s.opportunities).values({

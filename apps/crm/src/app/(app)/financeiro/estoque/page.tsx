@@ -27,7 +27,7 @@ export default async function EstoquePage() {
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-[1400px]">
       <PageHeader module="Financeiro" title="Estoque / Inventário"
-        subtitle="Controle de equipamentos e materiais. Baixa automática ao vincular a uma instalação." />
+        subtitle="Controle de equipamentos e materiais." />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <Kpi label="Itens em catálogo" value={String(items.length)} Icon={Package} tint="bg-sky-50 text-sky-600" />

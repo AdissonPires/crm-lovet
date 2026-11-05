@@ -21,7 +21,7 @@ import { carregarTabelaPrecos, produtoLabel, VARIANTES, PRODUTOS } from "@/lib/p
 export default async function PresalesLeadPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const user = await requireUser();
-  if (!can(user.role, "view_presales")) redirect("/projetos");
+  if (!can(user.role, "view_presales")) redirect("/conta/senha");
 
   const [lead] = await db.select().from(s.presalesLeads)
     .where(and(eq(s.presalesLeads.id, id), eq(s.presalesLeads.workspaceId, user.workspaceId)));

@@ -31,6 +31,4 @@ npm run db:seed      # dados de demonstração
 
 ## Pendências conhecidas
 
-- Resquícios do vertical solar (tabelas `sites`, `plants`, `engineering_*` etc.) vieram de um projeto
-  anterior e ainda existem no schema; remova se a Lovet não for usá-los.
 - Textos e preços do catálogo em `produtos.ts` são marcadores ("Produto A") até o cadastro real.

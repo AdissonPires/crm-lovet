@@ -12,7 +12,7 @@ import { EquipesCard } from "@/components/equipe/EquipesCard";
 import { listarEquipes } from "@/lib/equipes";
 import { revogarConviteAdmin } from "@/app/actions-convites";
 
-const PAPEL_LABEL: Record<string, string> = { rep: "Consultor(a)", sdr: "SDR", manager: "Gestor(a)", admin: "Admin", owner: "Admin", viewer: "Leitura", installer: "Técnico" };
+const PAPEL_LABEL: Record<string, string> = { rep: "Consultor(a)", sdr: "SDR", manager: "Gestor(a)", admin: "Admin", owner: "Admin", viewer: "Leitura" };
 
 /**
  * Equipe e acessos — gestor vê; só Admin/Proprietária (`manage_access`) altera logins e convida Admins. Lista quem tem login ativo no CRM. Ver app/actions-equipe.ts.

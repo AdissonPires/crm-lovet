@@ -8,7 +8,7 @@ import { LEAD_SOURCES } from "@/lib/leadSources";
 
 export default async function NovaOportunidadePage() {
   const user = await requireUser();
-  if (!can(user.role, "manage_records")) redirect("/projetos");
+  if (!can(user.role, "manage_records")) redirect("/conta/senha");
 
   const clientes = await db.select().from(s.companies)
     .where(eq(s.companies.workspaceId, user.workspaceId));

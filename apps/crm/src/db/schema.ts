@@ -32,7 +32,7 @@ export const workspaceMembers = pgTable("workspace_members", {
   id: uuid("id").primaryKey().defaultRandom(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
   userId: uuid("user_id").notNull().references(() => users.id),
-  role: text("role", { enum: ["owner", "admin", "admin2", "manager", "rep", "sdr", "installer", "viewer"] }).notNull(),
+  role: text("role", { enum: ["owner", "admin", "admin2", "manager", "rep", "sdr", "viewer"] }).notNull(),
   status: text("status").notNull().default("active"),
   // Equipe interna (ex.: "Equipe Alfa") — não é filial/local, é
   // time dentro da mesma empresa. Texto livre de propósito: equipe nova é
@@ -112,7 +112,7 @@ export const pipelines = pgTable("pipelines", {
   // "presales" entrou junto com os múltiplos funis: antes a pré-venda tinha um
   // único quadro com etapas fixas no código (lib/presalesFunnel.ts). Agora cada
   // funil de SDR é uma linha aqui, do mesmo jeito que os de venda.
-  kind: text("kind", { enum: ["sales", "installation", "presales"] }).notNull().default("sales"),
+  kind: text("kind", { enum: ["sales", "presales"] }).notNull().default("sales"),
   isDefault: boolean("is_default").notNull().default(false),
   /** Setor que agrupa este funil na lista. Nulo = "Sem setor". */
   sectorId: uuid("sector_id").references(() => sectors.id),
@@ -181,7 +181,7 @@ export const opportunityStageHistory = pgTable("opportunity_stage_history", {
 export const tasks = pgTable("tasks", {
   id: uuid("id").primaryKey().defaultRandom(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  relatedToType: text("related_to_type", { enum: ["company", "contact", "opportunity", "installation_project", "presales_lead"] }),
+  relatedToType: text("related_to_type", { enum: ["company", "contact", "opportunity", "presales_lead"] }),
   relatedToId: uuid("related_to_id"),
   assigneeId: uuid("assignee_id").references(() => users.id),
   createdBy: uuid("created_by").references(() => users.id),
@@ -265,37 +265,6 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => [index("ix_activities_rel").on(t.relatedToType, t.relatedToId)]);
 
-// ─── Solar vertical ─────────────────────────────────────────────────────────
-
-export const sites = pgTable("sites", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  companyId: uuid("company_id").references(() => companies.id),
-  contactId: uuid("contact_id").references(() => contacts.id),
-  address: text("address").notNull(),
-  city: text("city"),
-  state: text("state"),
-  roofType: text("roof_type"),
-  roofAreaM2: numeric("roof_area_m2", { precision: 8, scale: 1 }),
-  utilityCompany: text("utility_company"),
-  tariffClass: text("tariff_class"),
-  avgMonthlyConsumptionKwh: integer("avg_monthly_consumption_kwh"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const siteSurveys = pgTable("site_surveys", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  siteId: uuid("site_id").notNull().references(() => sites.id),
-  opportunityId: uuid("opportunity_id").references(() => opportunities.id),
-  surveyorId: uuid("surveyor_id").references(() => users.id),
-  scheduledAt: timestamp("scheduled_at"),
-  completedAt: timestamp("completed_at"),
-  technicalFeasibility: text("technical_feasibility", { enum: ["pending", "viable", "not_viable", "needs_reinforcement"] }).notNull().default("pending"),
-  structuralNotes: text("structural_notes"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
 export const proposals = pgTable("proposals", {
   id: uuid("id").primaryKey().defaultRandom(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
@@ -312,23 +281,6 @@ export const proposals = pgTable("proposals", {
   financingType: text("financing_type", { enum: ["cash", "financing", "leasing"] }).notNull().default("cash"),
   installments: integer("installments"),
   status: text("status", { enum: ["draft", "sent", "accepted", "rejected"] }).notNull().default("draft"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
-
-export const installationProjects = pgTable("installation_projects", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  opportunityId: uuid("opportunity_id").notNull().references(() => opportunities.id).unique(),
-  siteId: uuid("site_id").references(() => sites.id),
-  projectManagerId: uuid("project_manager_id").references(() => users.id),
-  installerId: uuid("installer_id").references(() => users.id),
-  stageId: uuid("stage_id").notNull().references(() => pipelineStages.id),
-  permitStatus: text("permit_status", { enum: ["pending", "submitted", "approved"] }).notNull().default("pending"),
-  utilityApprovalStatus: text("utility_approval_status", { enum: ["pending", "submitted", "approved"] }).notNull().default("pending"),
-  installationScheduledAt: timestamp("installation_scheduled_at"),
-  installationCompletedAt: timestamp("installation_completed_at"),
-  warrantyStartDate: timestamp("warranty_start_date"),
-  stageEnteredAt: timestamp("stage_entered_at").notNull().defaultNow(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -380,17 +332,8 @@ export const presalesLeads = pgTable("presales_leads", {
 
   city: text("city"),
   state: text("state"),
-  // Local onde o titular será atendido/validado (loja própria, parceiro
-  // contador, etc.) — antes gravado por engano em `utilityCompany` (coluna de
-  // distribuidora de energia, resquício solar), com a UI já rotulada
-  // corretamente como "Ponto de atendimento". Corrigido em 26/09/2026.
+  // Local de atendimento do cliente (loja própria, parceiro, etc.).
   pontoAtendimento: text("ponto_atendimento"),
-  // Resquícios do vertical solar (consumo/conta de luz). Não alimentam mais
-  // nada desde a correção de 26/09/2026 (ver `pontoAtendimento` e
-  // `productQty` acima/abaixo) — ficam só para não perder o histórico dos
-  // leads antigos.
-  utilityCompany: text("utility_company"),
-  avgMonthlyConsumptionKwh: integer("avg_monthly_consumption_kwh"),
   avgBillAmount: numeric("avg_bill_amount", { precision: 10, scale: 2 }),
   billFileUrl: text("bill_file_url"),
   billReceivedAt: timestamp("bill_received_at"),
@@ -618,18 +561,7 @@ export const whatsappTemplates = pgTable("whatsapp_templates", {
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
   title: text("title").notNull(),
   body: text("body").notNull(),
-  category: text("category", { enum: ["saudacao", "proposta", "cobranca", "instalacao", "geral"] }).notNull().default("geral"),
-});
-
-export const equipmentCatalog = pgTable("equipment_catalog", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  type: text("type", { enum: ["panel", "inverter", "battery", "structure"] }).notNull(),
-  manufacturer: text("manufacturer").notNull(),
-  model: text("model").notNull(),
-  specs: jsonb("specs").notNull().default({}),
-  unitCost: numeric("unit_cost", { precision: 12, scale: 2 }),
-  unitPrice: numeric("unit_price", { precision: 12, scale: 2 }),
+  category: text("category", { enum: ["saudacao", "proposta", "cobranca", "entrega", "geral"] }).notNull().default("geral"),
 });
 
 // ─── MÓDULO VENDAS: comissões & contratos ─────────────────────────────────────
@@ -670,7 +602,6 @@ export const contracts = pgTable("contracts", {
 export const inventoryItems = pgTable("inventory_items", {
   id: uuid("id").primaryKey().defaultRandom(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  equipmentId: uuid("equipment_id").references(() => equipmentCatalog.id),
   sku: text("sku").notNull(),
   name: text("name").notNull(),
   quantity: integer("quantity").notNull().default(0),
@@ -721,117 +652,6 @@ export const payrollEntries = pgTable("payroll_entries", {
   status: text("status", { enum: ["draft", "approved", "paid"] }).notNull().default("draft"),
   paidAt: timestamp("paid_at"),
 }, (t) => [index("ix_payroll_ws").on(t.workspaceId)]);
-
-// ─── MÓDULO ENGENHARIA ────────────────────────────────────────────────────────
-
-export const engineeringDesigns = pgTable("engineering_designs", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  opportunityId: uuid("opportunity_id").references(() => opportunities.id),
-  siteId: uuid("site_id").references(() => sites.id),
-  engineerId: uuid("engineer_id").references(() => users.id),
-  avgConsumptionKwh: integer("avg_consumption_kwh").notNull(),
-  targetOffsetPct: integer("target_offset_pct").notNull().default(100),
-  irradiationKwhM2Day: numeric("irradiation_kwh_m2_day", { precision: 4, scale: 2 }).notNull().default("4.80"),
-  systemSizeKwp: numeric("system_size_kwp", { precision: 8, scale: 2 }).notNull(),
-  panelModel: text("panel_model"),
-  panelWatts: integer("panel_watts"),
-  panelQty: integer("panel_qty"),
-  inverterModel: text("inverter_model"),
-  inverterKw: numeric("inverter_kw", { precision: 6, scale: 2 }),
-  estimatedGenerationKwhMonth: integer("estimated_generation_kwh_month"),
-  performanceRatio: numeric("performance_ratio", { precision: 4, scale: 2 }).notNull().default("0.80"),
-  requiredAreaM2: numeric("required_area_m2", { precision: 8, scale: 1 }),
-  unifilar: jsonb("unifilar").notNull().default({}),
-  status: text("status", { enum: ["draft", "approved", "issued"] }).notNull().default("draft"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (t) => [index("ix_designs_ws").on(t.workspaceId)]);
-
-export const creditPlants = pgTable("credit_plants", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  siteId: uuid("site_id").references(() => sites.id),
-  name: text("name").notNull(),
-  generatingUc: text("generating_uc").notNull(), // unidade consumidora geradora
-  capacityKwp: numeric("capacity_kwp", { precision: 8, scale: 2 }).notNull(),
-  avgGenerationKwhMonth: integer("avg_generation_kwh_month").notNull(),
-  modality: text("modality", { enum: ["self", "shared", "remote"] }).notNull().default("shared"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (t) => [index("ix_creditplants_ws").on(t.workspaceId)]);
-
-export const creditBeneficiaries = pgTable("credit_beneficiaries", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  plantId: uuid("plant_id").notNull().references(() => creditPlants.id),
-  name: text("name").notNull(),
-  uc: text("uc").notNull(), // unidade consumidora beneficiária
-  sharePct: numeric("share_pct", { precision: 5, scale: 2 }).notNull(),
-  avgConsumptionKwh: integer("avg_consumption_kwh").notNull().default(0),
-});
-
-// ─── MÓDULO OPERAÇÕES ─────────────────────────────────────────────────────────
-
-export const serviceOrders = pgTable("service_orders", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  number: text("number").notNull(),
-  kind: text("kind", { enum: ["installation", "maintenance", "inspection", "repair", "survey"] }).notNull().default("installation"),
-  companyId: uuid("company_id").references(() => companies.id),
-  siteId: uuid("site_id").references(() => sites.id),
-  installationProjectId: uuid("installation_project_id").references(() => installationProjects.id),
-  technicianId: uuid("technician_id").references(() => users.id),
-  priority: text("priority", { enum: ["low", "normal", "high", "urgent"] }).notNull().default("normal"),
-  status: text("status", { enum: ["scheduled", "in_progress", "done", "canceled"] }).notNull().default("scheduled"),
-  description: text("description"),
-  checklist: jsonb("checklist").notNull().default([]),
-  scheduledAt: timestamp("scheduled_at"),
-  startedAt: timestamp("started_at"),
-  completedAt: timestamp("completed_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (t) => [index("ix_so_ws").on(t.workspaceId)]);
-
-export const deliveryRoutes = pgTable("delivery_routes", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  driverId: uuid("driver_id").references(() => users.id),
-  date: timestamp("date").notNull(),
-  vehicle: text("vehicle"),
-  status: text("status", { enum: ["planned", "in_progress", "done"] }).notNull().default("planned"),
-  stops: jsonb("stops").notNull().default([]), // [{ order, address, company, items, done }]
-  distanceKm: numeric("distance_km", { precision: 8, scale: 1 }),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (t) => [index("ix_routes_ws").on(t.workspaceId)]);
-
-// ─── MÓDULO PÓS-VENDAS ────────────────────────────────────────────────────────
-
-export const plants = pgTable("plants", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
-  companyId: uuid("company_id").references(() => companies.id),
-  siteId: uuid("site_id").references(() => sites.id),
-  installationProjectId: uuid("installation_project_id").references(() => installationProjects.id),
-  name: text("name").notNull(),
-  capacityKwp: numeric("capacity_kwp", { precision: 8, scale: 2 }).notNull(),
-  inverterBrand: text("inverter_brand"),
-  monitoringProvider: text("monitoring_provider"),
-  monitoringId: text("monitoring_id"),
-  status: text("status", { enum: ["online", "offline", "warning"] }).notNull().default("online"),
-  lastReadingAt: timestamp("last_reading_at"),
-  todayKwh: numeric("today_kwh", { precision: 10, scale: 2 }).notNull().default("0"),
-  monthKwh: numeric("month_kwh", { precision: 12, scale: 2 }).notNull().default("0"),
-  totalKwh: numeric("total_kwh", { precision: 14, scale: 2 }).notNull().default("0"),
-  performanceRatio: numeric("performance_ratio", { precision: 4, scale: 2 }),
-  commissionedAt: timestamp("commissioned_at"),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-}, (t) => [index("ix_plants_ws").on(t.workspaceId)]);
-
-export const plantReadings = pgTable("plant_readings", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  plantId: uuid("plant_id").notNull().references(() => plants.id),
-  date: timestamp("date").notNull(),
-  generationKwh: numeric("generation_kwh", { precision: 10, scale: 2 }).notNull(),
-  expectedKwh: numeric("expected_kwh", { precision: 10, scale: 2 }),
-  performanceRatio: numeric("performance_ratio", { precision: 4, scale: 2 }),
-}, (t) => [index("ix_readings_plant").on(t.plantId)]);
 
 // ─── Feedback interno ──────────────────────────────────────────────────────
 
@@ -885,7 +705,6 @@ export const tickets = pgTable("tickets", {
   id: uuid("id").primaryKey().defaultRandom(),
   workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id),
   companyId: uuid("company_id").references(() => companies.id),
-  plantId: uuid("plant_id").references(() => plants.id),
   contactId: uuid("contact_id").references(() => contacts.id),
   subject: text("subject").notNull(),
   description: text("description"),

@@ -37,7 +37,7 @@ export default async function PreVendasPage({
   searchParams: Promise<SearchParams>;
 }) {
   const user = await requireUser();
-  if (!can(user.role, "view_presales")) redirect("/projetos");
+  if (!can(user.role, "view_presales")) redirect("/conta/senha");
 
   const params = await searchParams;
   const isChatView = params.view === "chat";

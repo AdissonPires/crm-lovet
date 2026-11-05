@@ -31,7 +31,7 @@ export default async function ContratosPage() {
   return (
     <div className="p-4 md:p-8 space-y-6 max-w-[1300px]">
       <PageHeader module="Vendas" title="Contratos"
-        subtitle="Geração e assinatura de contratos. Ao assinar, dispara projeto de instalação e contas a receber." />
+        subtitle="Geração e assinatura de contratos. Ao assinar, o contrato fica registrado como fechado." />
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
         <Kpi label="Contratos assinados" value={String(signed.length)} sub={brl(totalSigned)} Icon={FileSignature} tint="bg-emerald-50 text-emerald-600" />

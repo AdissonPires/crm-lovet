@@ -24,7 +24,7 @@ export const VISIT_REASONS = [
   { value: "compra_direta", label: "Primeira emissão" },
   { value: "orcamento", label: "Orçamento" },
   { value: "ajustes_manutencao", label: "Problema técnico" },
-  { value: "limpeza", label: "Suporte / instalação" },
+  { value: "limpeza", label: "Suporte / pós-venda" },
 ] as const;
 
 export type VisitReason = (typeof VISIT_REASONS)[number]["value"];
