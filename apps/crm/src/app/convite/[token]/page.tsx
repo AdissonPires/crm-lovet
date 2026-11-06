@@ -37,7 +37,7 @@ export default async function ConvitePage({ params }: { params: Promise<{ token:
   return (
     <main className="min-h-screen flex items-center justify-center bg-noturno px-6 py-10">
       <div className="w-full max-w-md">
-        <BrandLogo className="h-[40px] w-auto text-white" />
+        <BrandLogo alturaPx={72} />
         <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/45">CRM</div>
 
         {valido ? (

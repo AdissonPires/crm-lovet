@@ -22,7 +22,7 @@ export default async function LoginPage({
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_0%_0%,rgba(0,153,73,0.22),transparent_70%)]" />
 
         <div className="relative flex flex-col items-start">
-          <BrandLogo className="h-[44px] w-auto text-white" />
+          <BrandLogo alturaPx={96} />
           <div className="mt-1 text-[10px] uppercase tracking-[0.22em] text-white/45">CRM</div>
         </div>
 

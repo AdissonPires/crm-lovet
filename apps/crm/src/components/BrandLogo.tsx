@@ -1,32 +1,28 @@
+import Image from "next/image";
+
 /**
- * Wordmark da marca, em SVG inline.
+ * Logo da Lovet Distribuidora (imagem em public/brand).
  *
- * Inline e não via <Image src="...svg">: `currentColor` só é resolvido quando o
- * SVG faz parte do documento. Carregado como imagem externa, o navegador o
- * trata como bitmap opaco e a cor do CSS pai não chega nele — a logo sairia
- * preta sobre a sidebar azul. Assim o mesmo componente serve em fundo escuro
- * (herda branco) e claro (herda a cor do texto).
+ * O logo tem texto grafite, então em fundo escuro ele vai dentro de uma
+ * "plaquinha" branca arredondada (`placa`); em fundo claro (`placa={false}`)
+ * aparece solto. `marca` usa só o coração, para espaços pequenos.
  */
-export function BrandLogo({ className = "h-6 w-auto" }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 360 96"
-      className={className}
-      role="img"
-      aria-label="Lovet Distribuidora"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <text
-        x="0"
-        y="70"
-        fontFamily="Poppins, Montserrat, 'Century Gothic', 'Avenir Next', var(--font-geist-sans), 'Helvetica Neue', Arial, sans-serif"
-        fontSize="76"
-        fontWeight={700}
-        letterSpacing="-1.5"
-        fill="currentColor"
-      >
-        Lovet
-      </text>
-    </svg>
+export function BrandLogo({
+  alturaPx = 56, marca = false, placa = true, className = "",
+}: { alturaPx?: number; marca?: boolean; placa?: boolean; className?: string }) {
+  // Proporções dos arquivos: completo 612×678 (0,903), coração ≈ 1:1.
+  const largura = marca ? alturaPx : Math.round(alturaPx * (612 / 678));
+  const img = (
+    <Image
+      src={marca ? "/brand/coracao-lovet.png" : "/brand/logo-lovet.png"}
+      alt="Lovet Distribuidora"
+      width={marca ? 360 : 612}
+      height={marca ? 360 : 678}
+      priority
+      style={{ height: alturaPx, width: largura }}
+      className="object-contain"
+    />
   );
+  if (!placa) return <span className={`inline-flex ${className}`}>{img}</span>;
+  return <span className={`inline-flex rounded-2xl bg-white p-2 shadow-sm ${className}`}>{img}</span>;
 }

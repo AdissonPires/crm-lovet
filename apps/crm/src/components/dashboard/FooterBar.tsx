@@ -12,7 +12,7 @@ export function FooterBar({
   return (
     <div className="rounded-2xl bg-white border border-slate-200/60 shadow-sm px-6 py-4 flex flex-wrap items-center justify-between gap-4">
       {/* Wordmark no lugar de ícone + texto: o nome já está na logo. */}
-      <BrandLogo className="h-5 w-auto text-brand-700" />
+      <BrandLogo marca placa={false} alturaPx={22} />
 
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[12.5px] text-zinc-500">
         <span className="flex items-center gap-1.5">

@@ -22,7 +22,7 @@ function ModuleBlocked({ user }: { user: SessionUser }) {
   return (
     <main className="min-h-screen flex items-center justify-center bg-noturno px-6">
       <div className="w-full max-w-md rounded-3xl bg-white/[0.04] border border-white/10 p-8 text-center">
-        <BrandLogo className="h-[34px] w-auto text-white mx-auto mb-6" />
+        <BrandLogo alturaPx={72} className="mx-auto mb-6" />
         <h1 className="text-lg font-semibold text-white">CRM indisponível</h1>
         <p className="mt-2 text-sm text-zinc-400">{licenseMessage(user.license)}</p>
         <p className="mt-4 text-xs text-zinc-500">
@@ -117,15 +117,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <label htmlFor="menu-mobile" className="p-1.5 -ml-1.5 rounded-lg hover:bg-white/10 cursor-pointer" title="Menu">
           <Menu className="h-5 w-5" />
         </label>
-        <BrandLogo className="h-[20px] w-auto text-white" />
+        <BrandLogo marca alturaPx={28} className="!p-1.5 !rounded-xl" />
       </header>
       <label htmlFor="menu-mobile" aria-hidden className="md:hidden fixed inset-0 z-40 bg-black/40 hidden peer-checked:block" />
       <aside className="w-64 shrink-0 bg-brand-900 flex flex-col text-white max-md:fixed max-md:inset-y-0 max-md:left-0 max-md:z-50 max-md:w-72 max-md:-translate-x-full peer-checked:translate-x-0 transition-transform duration-200">
-        {/* A logo é o próprio nome da marca (wordmark), então dispensa ícone
-            ao lado — repetir símbolo + nome competiria pela mesma leitura.
-            O SVG usa currentColor, por isso herda o branco daqui. */}
+        {/* Logo em plaquinha branca: o texto do logo é grafite e não leria sobre o fundo escuro. */}
         <div className="px-5 py-6">
-          <BrandLogo className="h-[26px] w-auto text-white" />
+          <BrandLogo alturaPx={64} />
           <div className="mt-1.5 text-[10px] uppercase tracking-[0.18em] text-white/45">CRM</div>
         </div>
 
