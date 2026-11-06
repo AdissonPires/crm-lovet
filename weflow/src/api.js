@@ -1,0 +1,221 @@
+const AUTH_KEY = 'weflow_auth'
+
+export const getAuth = () => {
+  try {
+    return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null')
+  } catch {
+    return null
+  }
+}
+
+export const setAuth = (auth) => {
+  if (auth) localStorage.setItem(AUTH_KEY, JSON.stringify(auth))
+  else localStorage.removeItem(AUTH_KEY)
+}
+
+const request = async (path, options = {}) => {
+  const auth = getAuth()
+  const res = await fetch(path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(auth?.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+      ...options.headers,
+    },
+  })
+  if (res.status === 401 && auth) {
+    // sessão expirada — volta para o login
+    setAuth(null)
+    window.location.reload()
+    throw new Error('Sessão expirada')
+  }
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || `Erro ${res.status}`)
+  }
+  if (res.status === 204) return null
+  return res.json()
+}
+
+/**
+ * Entrada vinda do CRM: o servidor redireciona para /#sso=<token>. Troca o token
+ * pela sessão completa (usuário + workspace), limpa o endereço e segue o fluxo normal.
+ * Retorna true se havia um token de SSO na URL.
+ */
+export const consumeSso = async () => {
+  const m = /^#sso=([\w-]+\.[\w-]+\.[\w-]+)$/.exec(window.location.hash || '')
+  if (!m) return false
+  const token = m[1]
+  window.history.replaceState(null, '', window.location.pathname + window.location.search)
+  const headers = { Authorization: `Bearer ${token}` }
+  try {
+    const [meRes, wsRes] = await Promise.all([fetch('/api/auth/me', { headers }), fetch('/api/workspace', { headers })])
+    if (!meRes.ok) return false
+    const user = await meRes.json()
+    const workspace = wsRes.ok ? await wsRes.json() : null
+    setAuth({ token, user, workspace })
+    return true
+  } catch {
+    return false
+  }
+}
+
+export const api = {
+  // auth — não há cadastro público: contas nascem de um convite do gestor
+  login: (email, password) =>
+    request('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+
+  // convite (rotas públicas, usadas pela tela /activate/:token)
+  getInvitation: (token) => request(`/api/auth/invitations/${token}`),
+  acceptInvitation: (token, password) =>
+    request(`/api/auth/invitations/${token}/accept`, {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    }),
+
+  // workspace do usuário logado
+  getWorkspace: () => request('/api/workspace'),
+
+  // perfil do usuário logado
+  getProfile: () => request('/api/auth/me'),
+  // Assistente (ChatGPT): chaves de conexão e histórico do que ele criou (porta da tela, login normal)
+  listAssistantTokens: () => request('/api/assistant/tokens'),
+  createAssistantToken: (body) => request('/api/assistant/tokens', { method: 'POST', body: JSON.stringify(body) }),
+  revokeAssistantToken: (id) => request('/api/assistant/tokens/' + id, { method: 'DELETE' }),
+  // login OAuth do ChatGPT (tela /conectar)
+  oauthCheck: ({ client_id, redirect_uri }) =>
+    request('/api/oauth/authorize/check?client_id=' + encodeURIComponent(client_id) + '&redirect_uri=' + encodeURIComponent(redirect_uri)),
+  oauthAuthorize: (body) => request('/api/oauth/authorize', { method: 'POST', body: JSON.stringify(body) }),
+  listAssistantBatches: (before) => request('/api/assistant/app/batches' + (before ? '?before=' + encodeURIComponent(before) : '')),
+  getAssistantUndoPlan: (batchId) => request('/api/assistant/app/batches/' + encodeURIComponent(batchId) + '/undo-plan'),
+  undoAssistantBatch: (batchId, onlyIds) => request('/api/assistant/app/batches/' + encodeURIComponent(batchId) + '/undo', { method: 'POST', body: JSON.stringify({ only_ids: onlyIds }) }),
+  updateProfile: (updates) =>
+    request('/api/profile', { method: 'PATCH', body: JSON.stringify(updates) }),
+  changePassword: (current_password, new_password) =>
+    request('/api/profile/password', {
+      method: 'PATCH',
+      body: JSON.stringify({ current_password, new_password }),
+    }),
+
+  // tarefas
+  getTasks: () => request('/api/tasks'),
+  getTask: (id) => request(`/api/tasks/${id}`),
+  // todas as tarefas de um cliente (qualquer responsável) — usada pela aba Relatórios
+  getTasksByClient: (clientId) => request(`/api/tasks/by-client/${clientId}`),
+  // todas as tarefas vinculadas a QUALQUER cliente (qualquer responsável) — o
+  // Calendário junta isso às tarefas pessoais para mostrar o trabalho de toda
+  // a equipe nos clientes, e não só o que está atribuído ao usuário logado
+  getClientLinkedTasks: () => request('/api/tasks/client-linked'),
+  // Progresso por cliente considerando as tarefas de toda a equipe
+  getClientTaskStats: () => request('/api/tasks/client-stats'),
+  addTask: (title, priority, due_date, assigned_to, description, client_id = null, tags = []) =>
+    request('/api/tasks', {
+      method: 'POST',
+      body: JSON.stringify({ title, priority, due_date, assigned_to, description, client_id, tags }),
+    }),
+  // Criação com o objeto completo — usada pelo modal de especificações da tarefa
+  // (o `addTask` posicional continua servindo os formulários rápidos)
+  createTask: (fields) =>
+    request('/api/tasks', { method: 'POST', body: JSON.stringify(fields) }),
+  moveTask: (id, column_key) =>
+    request(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify({ column_key }) }),
+  updateTask: (id, updates) =>
+    request(`/api/tasks/${id}`, { method: 'PATCH', body: JSON.stringify(updates) }),
+  deleteTask: (id) => request(`/api/tasks/${id}`, { method: 'DELETE' }),
+
+  // etiquetas de tarefas (registro global — pré-cadastradas + criadas sob demanda)
+  getTags: () => request('/api/tags'),
+  createTag: (name, color) =>
+    request('/api/tags', { method: 'POST', body: JSON.stringify({ name, color }) }),
+  deleteTag: (id) => request(`/api/tags/${id}`, { method: 'DELETE' }),
+
+  // membros — a criação é por convite (o gestor não define a senha de ninguém).
+  // inviteMember devolve { invitation, activation_url }: o link só existe nessa
+  // resposta, então o gestor precisa copiá-lo ali.
+  getMembers: () => request('/api/members'),
+  inviteMember: (invite) =>
+    request('/api/members/invite', { method: 'POST', body: JSON.stringify(invite) }),
+  getInvitations: () => request('/api/members/invitations'),
+  revokeInvitation: (id) => request(`/api/members/invitations/${id}`, { method: 'DELETE' }),
+  deleteMember: (id) => request(`/api/members/${id}`, { method: 'DELETE' }),
+
+  // clientes
+  getClients: () => request('/api/clients'),
+  createClient: (client) =>
+    request('/api/clients', { method: 'POST', body: JSON.stringify(client) }),
+  updateClient: (id, updates) =>
+    request(`/api/clients/${id}`, { method: 'PATCH', body: JSON.stringify(updates) }),
+  // mode: 'archive' (desvincula as pastas) | 'cascade' (exclui as pastas)
+  deleteClient: (id, mode = 'archive') =>
+    request(`/api/clients/${id}?folders=${mode}`, { method: 'DELETE' }),
+
+  // sino de notificações — today é a data local do navegador (AAAA-MM-DD)
+  getNotifications: (today) => request(`/api/notifications?today=${encodeURIComponent(today)}`),
+  markNotificationRead: (id) => request(`/api/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllNotificationsRead: () => request('/api/notifications/read-all', { method: 'POST' }),
+
+  // notas
+  getNotes: () => request('/api/notes'),
+  createNote: (title, content) =>
+    request('/api/notes', { method: 'POST', body: JSON.stringify({ title, content }) }),
+  updateNote: (id, title, content) =>
+    request(`/api/notes/${id}`, { method: 'PUT', body: JSON.stringify({ title, content }) }),
+  deleteNote: (id) => request(`/api/notes/${id}`, { method: 'DELETE' }),
+  updateNoteFolder: (id, folderId) =>
+    request(`/api/notes/${id}/folder`, { method: 'PATCH', body: JSON.stringify({ folder_id: folderId }) }),
+  updateNoteAttachments: (id, attachments) =>
+    request(`/api/notes/${id}/attachments`, { method: 'PATCH', body: JSON.stringify({ attachments }) }),
+
+  // checklist
+  getTodos: () => request('/api/todos'),
+  addTodo: (text, priority, due_at) =>
+    request('/api/todos', { method: 'POST', body: JSON.stringify({ text, priority, due_at }) }),
+  toggleTodo: (id, done) =>
+    request(`/api/todos/${id}`, { method: 'PATCH', body: JSON.stringify({ done }) }),
+  updateTodo: (id, updates) =>
+    request(`/api/todos/${id}`, { method: 'PATCH', body: JSON.stringify(updates) }),
+  deleteTodo: (id) => request(`/api/todos/${id}`, { method: 'DELETE' }),
+
+  // colunas do kanban
+  getColumns: () => request('/api/columns'),
+  createColumn: (label, key, position, color) =>
+    request('/api/columns', { method: 'POST', body: JSON.stringify({ label, key, position, color }) }),
+  updateColumn: (key, changes) =>
+    request(`/api/columns/${key}`, { method: 'PATCH', body: JSON.stringify(changes) }),
+  // As tarefas da coluna excluída vão para `moveTo` (obrigatório se houver alguma).
+  deleteColumn: (key, moveTo) =>
+    request(`/api/columns/${key}${moveTo ? `?moveTo=${encodeURIComponent(moveTo)}` : ''}`, { method: 'DELETE' }),
+  // `keys`: todas as colunas, exceto Concluído, na nova ordem.
+  reorderColumns: (keys) => request('/api/columns/order', { method: 'PUT', body: JSON.stringify({ keys }) }),
+
+  // equipe (gestor)
+  getTeamOverview: () => request('/api/team/overview'),
+  getTeamTasks: () => request('/api/team/tasks'),
+
+  // pastas de documentos
+  getFolders: () => request('/api/folders'),
+  createFolder: (name, color, parentId = null, clientId = null) =>
+    request('/api/folders', {
+      method: 'POST',
+      body: JSON.stringify({ name, color, parent_id: parentId || null, client_id: clientId || null }),
+    }),
+  updateFolder: (id, updates) =>
+    request(`/api/folders/${id}`, { method: 'PATCH', body: JSON.stringify(updates) }),
+  deleteFolder: (id) => request(`/api/folders/${id}`, { method: 'DELETE' }),
+  getFolderDocuments: (folderId) => request(`/api/folders/${folderId}/documents`),
+  addFolderDocument: (folderId, kind, url, name) =>
+    request(`/api/folders/${folderId}/documents`, {
+      method: 'POST',
+      body: JSON.stringify({ kind, url, name }),
+    }),
+  deleteFolderDocument: (folderId, docId) =>
+    request(`/api/folders/${folderId}/documents/${docId}`, { method: 'DELETE' }),
+
+  // relatórios (planilha de atividades)
+  getReportActivities: () => request('/api/report-activities'),
+  createReportActivity: (fields = {}) =>
+    request('/api/report-activities', { method: 'POST', body: JSON.stringify(fields) }),
+  updateReportActivity: (id, updates) =>
+    request(`/api/report-activities/${id}`, { method: 'PATCH', body: JSON.stringify(updates) }),
+  deleteReportActivity: (id) => request(`/api/report-activities/${id}`, { method: 'DELETE' }),
+}

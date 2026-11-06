@@ -12,6 +12,7 @@ atividade e FeedMeet (ata de reuniões com IA).
 | `packages/db` | Schema `shared` (identidade, empresas, licenças) e utilitários de banco |
 | `packages/auth` | Sessão, hash de senha e licenciamento por módulo |
 | `packages/ai` | Camada de IA (Anthropic ou Ollama local) |
+| `weflow/` | WeFlow, gestor de tarefas da Lovet (app separado; abre pelo botão **WeFlow** do CRM com login automático — veja `weflow/README.md`) |
 | `packages/ui` | Tokens visuais compartilhados |
 | `n8n-evolution` | Stack Docker de WhatsApp: Evolution API, n8n, Whisper, Postgres, Redis |
 | `docker/` | SQL de inicialização dos schemas e permissões do banco |

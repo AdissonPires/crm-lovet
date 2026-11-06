@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Target, Users, CheckSquare, LogOut, MessageCircle, Mic,
   Percent, FileSignature,
   Filter, Megaphone, PieChart,
-  MessageSquareHeart, FileBarChart, UserCog, KeyRound, Menu, BarChart3, ShoppingCart, FileText, Package,
+  MessageSquareHeart, FileBarChart, UserCog, KeyRound, Menu, BarChart3, ShoppingCart, FileText, Package, ListChecks, ArrowUpRight,
 } from "lucide-react";
 import { licenseMessage } from "@lovet/auth";
 import { getSessionUser, type SessionUser } from "@/lib/auth";
@@ -125,6 +125,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div className="px-5 py-6">
           <BrandLogo alturaPx={64} />
           <div className="mt-1.5 text-[10px] uppercase tracking-[0.18em] text-white/45">CRM</div>
+          {/* Gestor de tarefas da Lovet: abre já logado (SSO), em outra aba. */}
+          <a
+            href="/api/sso/weflow" target="_blank" rel="noopener"
+            className="mt-3 inline-flex items-center gap-2 rounded-xl bg-brand-500 px-3.5 py-2 text-[13px] font-semibold text-white shadow-sm hover:bg-brand-400 transition-colors"
+          >
+            <ListChecks className="h-4 w-4" strokeWidth={2.2} /> WeFlow <ArrowUpRight className="h-3.5 w-3.5 opacity-80" />
+          </a>
         </div>
 
         <nav className="flex-1 px-3 py-2 space-y-4 overflow-y-auto">

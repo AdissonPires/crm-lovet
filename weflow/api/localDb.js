@@ -1,0 +1,472 @@
+// Banco de dados local mockado — substitui o Supabase no backend para desenvolvimento.
+//
+// Persiste em um arquivo JSON (data/db.json) e expõe um subconjunto da API do
+// cliente supabase-js (`.from(table).select().eq().order().single()...`) para
+// que as rotas em api/index.js não precisem ser reescritas: apenas trocamos
+// `createClient(url, key)` por `createLocalClient()`.
+//
+// Por ser baseado em arquivo local, serve para desenvolvimento na sua máquina.
+// Um deploy real (ex: Vercel) precisa de um banco de verdade, já que funções
+// serverless não garantem disco persistente entre invocações.
+
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { randomUUID } from 'crypto'
+import bcrypt from 'bcryptjs'
+
+// WeFlow_DB_PATH permite apontar para outro arquivo — usado pelos testes
+// (tests/) para não tocar no data/db.json de desenvolvimento.
+const DB_PATH = process.env.WeFlow_DB_PATH
+  || fileURLToPath(new URL('../data/db.json', import.meta.url))
+
+// Entidades que pertencem a uma empresa (workspace) e por isso carregam
+// workspace_id. weflow_workspaces é a própria lista de tenants e weflow_invitations
+// referencia o workspace pelo campo homônimo — nenhuma das duas entra aqui.
+const WORKSPACE_SCOPED = [
+  'weflow_users',
+  'weflow_tasks',
+  'weflow_notes',
+  'weflow_todos',
+  'weflow_media',
+  'weflow_folders',
+  'weflow_folder_media',
+  'weflow_columns',
+  'weflow_clients',
+  'weflow_report_activities',
+  'weflow_tags',
+  'weflow_notifications',
+  'weflow_api_tokens',
+  'weflow_assistant_batches',
+  'weflow_assistant_consents',
+]
+
+// OAuth do Assistente (MCP): clientes registrados e códigos de autorização — sem workspace_id próprio.
+const TABLES = ['weflow_workspaces', 'weflow_invitations', ...WORKSPACE_SCOPED, 'weflow_oauth_clients', 'weflow_oauth_codes']
+
+// Nome do workspace criado na primeira execução e usado para adotar os dados
+// que existiam antes da arquitetura multi-tenant.
+const DEFAULT_WORKSPACE_NAME = 'Lovet Distribuidora'
+
+// Colunas com restrição de unicidade, por tabela — usado para simular o erro
+// de constraint '23505' que o código já trata (ex: e-mail duplicado).
+// Um item pode ser uma coluna (única globalmente) ou um array de colunas
+// (única em conjunto — é assim que chave de coluna e nome de etiqueta passam a
+// ser únicos por workspace, e não mais em todo o banco).
+const UNIQUE_COLUMNS = {
+  weflow_users: ['email'],
+  weflow_columns: [['workspace_id', 'key']],
+  weflow_tags: [['workspace_id', 'name']],
+  // Avisos de prazo: um por (usuário, tarefa, data); dedupe_key nulo não conflita
+  weflow_notifications: [['user_id', 'dedupe_key']],
+  // Assistente (ChatGPT): token guardado só como hash; um lote por (usuário, batch_id)
+  weflow_api_tokens: ['token_hash', 'refresh_hash'],
+  weflow_oauth_clients: ['client_id'],
+  weflow_oauth_codes: ['code_hash'],
+  weflow_assistant_batches: [['user_id', 'batch_id']],
+  weflow_invitations: ['token_hash'],
+}
+
+// Tabelas com created_at/updated_at automáticos ao inserir/atualizar.
+const TIMESTAMPED = new Set([
+  'weflow_notes', 'weflow_media', 'weflow_folders', 'weflow_folder_media',
+  'weflow_columns', 'weflow_clients', 'weflow_report_activities', 'weflow_tasks',
+  'weflow_tags', 'weflow_notifications', 'weflow_api_tokens', 'weflow_assistant_batches', 'weflow_assistant_consents',
+  'weflow_workspaces', 'weflow_invitations', 'weflow_oauth_clients', 'weflow_oauth_codes',
+])
+
+// Etiquetas padrão da Lovet Distribuidora — pré-cadastradas na primeira execução.
+const DEFAULT_TAGS = [
+  { name: 'Visitas a clientes', color: '#009949' },
+  { name: 'Cotações', color: '#4f8ff7' },
+  { name: 'Pedidos e entregas', color: '#f2a93b' },
+  { name: 'Pós-venda', color: '#9333ea' },
+  { name: 'Cobrança', color: '#e85d75' },
+  { name: 'Reuniões', color: '#009949' },
+]
+
+function seedDb() {
+  const now = new Date().toISOString()
+  const workspaceId = randomUUID()
+  const gestorId = randomUUID()
+  return {
+    weflow_workspaces: [
+      {
+        id: workspaceId,
+        name: DEFAULT_WORKSPACE_NAME,
+        cnpj: null,
+        phone: null,
+        email: null,
+        contact_name: null,
+        address: null,
+        color: '#009949',
+        created_by: gestorId,
+        created_at: now,
+        updated_at: now,
+      },
+    ],
+    weflow_invitations: [],
+    weflow_users: [
+      {
+        id: gestorId,
+        workspace_id: workspaceId,
+        name: 'Gestor Lovet',
+        email: (process.env.WEFLOW_GESTOR_EMAIL || 'gestor@lovet.local').trim().toLowerCase(),
+        // Sem senha padrão: o acesso normal é pelo botão WeFlow do CRM (SSO). Para entrar direto
+        // por e-mail e senha, defina WEFLOW_GESTOR_PASSWORD (mín. 12 caracteres) antes da 1ª execução.
+        password_hash: bcrypt.hashSync(
+          (process.env.WEFLOW_GESTOR_PASSWORD || '').length >= 12 ? process.env.WEFLOW_GESTOR_PASSWORD : randomUUID() + randomUUID(),
+          10,
+        ),
+        role: 'gestor',
+        status: 'active',
+        job_title: null,
+        color: null,
+        avatar_url: null,
+        created_at: now,
+      },
+    ],
+    weflow_tasks: [],
+    weflow_notes: [],
+    weflow_todos: [],
+    weflow_media: [],
+    weflow_folders: [],
+    weflow_folder_media: [],
+    weflow_columns: [
+      { id: randomUUID(), workspace_id: workspaceId, key: 'todo', label: 'A Fazer', position: 0, color: '#9ca3af', created_at: now },
+      { id: randomUUID(), workspace_id: workspaceId, key: 'doing', label: 'Em Progresso', position: 1, color: '#009949', created_at: now },
+      { id: randomUUID(), workspace_id: workspaceId, key: 'done', label: 'Concluído', position: 2, color: '#2ec27e', created_at: now },
+    ],
+    weflow_clients: [],
+    weflow_report_activities: [],
+    weflow_tags: DEFAULT_TAGS.map((t) => ({ id: randomUUID(), workspace_id: workspaceId, ...t, created_at: now })),
+    weflow_notifications: [],
+    weflow_api_tokens: [],
+    weflow_assistant_batches: [],
+    weflow_assistant_consents: [],
+    weflow_oauth_clients: [],
+    weflow_oauth_codes: [],
+  }
+}
+
+// ── Migração para a arquitetura multi-tenant ────────────────────────────────
+// Bancos criados antes dos workspaces não têm weflow_workspaces nem
+// workspace_id nas linhas. Cria o workspace inicial (WeFlow) e adota nele
+// todos os registros já existentes. Nada é apagado nem duplicado; roda uma vez
+// só, porque na segunda execução todas as linhas já têm workspace_id.
+function migrateToWorkspaces(parsed) {
+  let touched = false
+  const now = new Date().toISOString()
+
+  if (parsed.weflow_workspaces.length === 0 && WORKSPACE_SCOPED.some((t) => parsed[t].length > 0)) {
+    const owner = parsed.weflow_users.find((u) => u.role === 'gestor') || parsed.weflow_users[0]
+    parsed.weflow_workspaces.push({
+      id: randomUUID(),
+      name: DEFAULT_WORKSPACE_NAME,
+      cnpj: null,
+      phone: null,
+      email: null,
+      contact_name: null,
+      address: null,
+      color: '#009949',
+      created_by: owner?.id || null,
+      created_at: now,
+      updated_at: now,
+    })
+    touched = true
+  }
+
+  const initial = parsed.weflow_workspaces[0]
+  if (!initial) return touched
+
+  for (const table of WORKSPACE_SCOPED) {
+    for (const row of parsed[table]) {
+      if (!row.workspace_id) { row.workspace_id = initial.id; touched = true }
+    }
+  }
+  // Usuários criados antes do campo `status` continuam podendo entrar.
+  for (const user of parsed.weflow_users) {
+    if (!user.status) { user.status = 'active'; touched = true }
+  }
+  return touched
+}
+
+function persist(state) {
+  fs.mkdirSync(path.dirname(DB_PATH), { recursive: true })
+  fs.writeFileSync(DB_PATH, JSON.stringify(state, null, 2))
+}
+
+function loadDb() {
+  try {
+    const raw = fs.readFileSync(DB_PATH, 'utf-8')
+    const parsed = JSON.parse(raw)
+    // Garante que tabelas adicionadas depois do arquivo já existir tenham array
+    let touched = false
+    for (const t of TABLES) {
+      if (!Array.isArray(parsed[t])) { parsed[t] = []; touched = true }
+    }
+    // Backfill das etiquetas padrão para bancos locais já existentes (criados
+    // antes desta feature) — só roda se a tabela ainda não tinha nenhuma linha.
+    if (parsed.weflow_tags.length === 0) {
+      const now = new Date().toISOString()
+      parsed.weflow_tags = DEFAULT_TAGS.map((t) => ({ id: randomUUID(), ...t, created_at: now }))
+      touched = true
+    }
+    // Adota os dados pré-multi-tenant no workspace inicial (o workspace_id das
+    // etiquetas recém-criadas acima também é preenchido aqui).
+    if (migrateToWorkspaces(parsed)) touched = true
+    if (touched) persist(parsed)
+    return parsed
+  } catch {
+    const seeded = seedDb()
+    persist(seeded)
+    return seeded
+  }
+}
+
+// Leitura do arquivo é preguiçosa: só roda quando uma query de verdade toca o
+// banco mockado. Em produção (createClient real, ver api/index.js), este
+// arquivo é importado mas createLocalClient() nunca chega a ser chamado — sem
+// isso, o simples `import` já tentaria escrever em disco, e ambientes
+// serverless (Vercel) têm sistema de arquivos somente-leitura fora de /tmp.
+let _state = null
+function getState() {
+  if (_state === null) _state = loadDb()
+  return _state
+}
+
+const uniqueViolation = (col) => ({
+  code: '23505',
+  message: `duplicate key value violates unique constraint (${col})`,
+})
+
+function checkUnique(table, item, ignoreId) {
+  const specs = UNIQUE_COLUMNS[table]
+  if (!specs) return null
+  for (const spec of specs) {
+    const cols = Array.isArray(spec) ? spec : [spec]
+    // Só valida quando o payload traz todas as colunas do grupo — um update
+    // parcial não tem como violar uma unicidade composta que não mexeu.
+    if (cols.some((c) => item[c] === undefined || item[c] === null)) continue
+    const clash = getState()[table].some(
+      (row) => row.id !== ignoreId && cols.every((c) => row[c] === item[c]),
+    )
+    if (clash) return uniqueViolation(cols.join(','))
+  }
+  return null
+}
+
+// Projeta apenas as colunas pedidas em `.select('a, b, c')`. Selects com
+// sintaxe de join embutido (`assignee:weflow_users!fk(...)`) não são
+// suportados aqui de propósito — resolva o join manualmente na rota (é o caso
+// de /api/team/tasks) em vez de generalizar esse parser.
+function project(row, cols) {
+  if (!cols || cols === '*' || /[:!()]/.test(cols)) return { ...row }
+  const fields = cols.split(',').map((s) => s.trim()).filter(Boolean)
+  const out = {}
+  for (const f of fields) out[f] = row[f]
+  return out
+}
+
+function compare(a, b) {
+  if (a === b) return 0
+  if (a === null || a === undefined) return -1
+  if (b === null || b === undefined) return 1
+  return a > b ? 1 : -1
+}
+
+// ── Query builder — thenable, compatível com o subconjunto do supabase-js
+// usado neste projeto (select/insert/update/delete/upsert + eq/in/order/single) ──
+class LocalQuery {
+  constructor(table) {
+    this.table = table
+    this.verb = null
+    this.payload = null
+    this.upsertOpts = null
+    this.filters = []
+    this.selectCols = null
+    this.wantsReturn = false
+    this.orderSpec = null
+    this.limitN = null
+    this._single = false
+    this._maybeSingle = false
+  }
+
+  select(cols = '*') {
+    if (!this.verb) this.verb = 'select'
+    else this.wantsReturn = true
+    this.selectCols = cols
+    return this
+  }
+
+  insert(payload) { this.verb = 'insert'; this.payload = payload; return this }
+  update(payload) { this.verb = 'update'; this.payload = payload; return this }
+  delete() { this.verb = 'delete'; return this }
+  upsert(payload, opts = {}) { this.verb = 'upsert'; this.payload = payload; this.upsertOpts = opts; return this }
+
+  eq(col, val) { this.filters.push({ col, op: 'eq', val }); return this }
+  neq(col, val) { this.filters.push({ col, op: 'neq', val }); return this }
+  in(col, vals) { this.filters.push({ col, op: 'in', val: vals }); return this }
+  // Só cobre o uso real deste projeto: .not(col, 'is', null) → IS NOT NULL
+  // .is(col, null) → IS NULL (como no PostgREST; coluna ausente conta como null)
+  is(col, val) { this.filters.push({ col, op: 'is', val }); return this }
+  // .limit(n): só vale em select, aplicado depois do order (como no PostgREST)
+  limit(n) { this.limitN = n; return this }
+  not(col, op, val) { this.filters.push({ col, op: `not_${op}`, val }); return this }
+
+  order(col, opts = {}) { this.orderSpec = { col, ascending: opts.ascending !== false }; return this }
+  single() { this._single = true; return this }
+  maybeSingle() { this._maybeSingle = true; return this }
+
+  _matches(row) {
+    return this.filters.every((f) => {
+      if (f.op === 'eq') return row[f.col] === f.val
+      if (f.op === 'neq') return row[f.col] !== f.val
+      if (f.op === 'in') return f.val.includes(row[f.col])
+      if (f.op === 'is') return f.val === null || f.val === undefined
+        ? row[f.col] === null || row[f.col] === undefined
+        : row[f.col] === f.val
+      if (f.op === 'not_is') return f.val === null
+        ? row[f.col] !== null && row[f.col] !== undefined
+        : row[f.col] !== f.val
+      return true
+    })
+  }
+
+  _finalize(rows) {
+    if (this.verb === 'delete') return { data: null, error: null }
+    if (this._single) {
+      if (rows.length !== 1) {
+        return { data: null, error: { code: 'PGRST116', message: 'Registro não encontrado (single)' } }
+      }
+      return { data: rows[0], error: null }
+    }
+    if (this._maybeSingle) {
+      if (rows.length === 0) return { data: null, error: null }
+      if (rows.length > 1) return { data: null, error: { code: 'PGRST116', message: 'Múltiplos registros encontrados' } }
+      return { data: rows[0], error: null }
+    }
+    if (this.verb === 'insert' || this.verb === 'update' || this.verb === 'upsert') {
+      return { data: rows, error: null }
+    }
+    return { data: rows, error: null }
+  }
+
+  _run() {
+    const state = getState()
+    const table = state[this.table]
+    if (!table) return { data: null, error: { message: `Tabela desconhecida: ${this.table}` } }
+
+    if (this.verb === 'select') {
+      let result = table.filter((r) => this._matches(r))
+      if (this.orderSpec) {
+        const { col, ascending } = this.orderSpec
+        result = [...result].sort((a, b) => (ascending ? compare(a[col], b[col]) : -compare(a[col], b[col])))
+      }
+      if (typeof this.limitN === 'number') result = result.slice(0, Math.max(0, this.limitN))
+      return this._finalize(result.map((r) => project(r, this.selectCols)))
+    }
+
+    if (this.verb === 'insert') {
+      const now = new Date().toISOString()
+      const items = Array.isArray(this.payload) ? this.payload : [this.payload]
+      const inserted = []
+      for (const item of items) {
+        const uniqueErr = checkUnique(this.table, item)
+        if (uniqueErr) return { data: null, error: uniqueErr }
+        const row = { id: item.id || randomUUID(), ...item }
+        if (TIMESTAMPED.has(this.table)) {
+          if (row.created_at === undefined) row.created_at = now
+          if ('updated_at' in row || this.table !== 'weflow_folder_media') {
+            if (row.updated_at === undefined && Object.prototype.hasOwnProperty.call(seedShape(this.table), 'updated_at')) {
+              row.updated_at = now
+            }
+          }
+        }
+        table.push(row)
+        inserted.push(row)
+      }
+      persist(state)
+      return this._finalize(inserted.map((r) => project(r, this.selectCols)))
+    }
+
+    if (this.verb === 'update') {
+      const now = new Date().toISOString()
+      const changed = []
+      for (const row of table) {
+        if (!this._matches(row)) continue
+        const uniqueErr = checkUnique(this.table, this.payload, row.id)
+        if (uniqueErr) return { data: null, error: uniqueErr }
+        Object.assign(row, this.payload)
+        if (TIMESTAMPED.has(this.table) && this.payload.updated_at === undefined && Object.prototype.hasOwnProperty.call(seedShape(this.table), 'updated_at')) {
+          row.updated_at = now
+        }
+        changed.push(row)
+      }
+      persist(state)
+      return this._finalize(changed.map((r) => project(r, this.selectCols)))
+    }
+
+    if (this.verb === 'delete') {
+      state[this.table] = table.filter((r) => !this._matches(r))
+      persist(state)
+      return this._finalize([])
+    }
+
+    if (this.verb === 'upsert') {
+      const onConflict = (this.upsertOpts?.onConflict || 'id').split(',').map((s) => s.trim())
+      const existing = table.find((r) => onConflict.every((c) => r[c] === this.payload[c]))
+      const now = new Date().toISOString()
+      if (existing) {
+        Object.assign(existing, this.payload)
+        if (TIMESTAMPED.has(this.table) && this.payload.updated_at === undefined) existing.updated_at = now
+        persist(state)
+        return this._finalize([project(existing, this.selectCols)])
+      }
+      const row = { id: this.payload.id || randomUUID(), ...this.payload }
+      table.push(row)
+      persist(state)
+      return this._finalize([project(row, this.selectCols)])
+    }
+
+    return { data: null, error: { message: `Operação não suportada: ${this.verb}` } }
+  }
+
+  // Torna o builder "thenable" — funciona com `await` e dentro de Promise.all,
+  // igual ao cliente real do supabase-js. Nunca rejeita: erros vão em `.error`.
+  then(resolve, reject) {
+    try {
+      resolve(this._run())
+    } catch (err) {
+      // Erro inesperado do próprio shim — mantém o formato {data, error}
+      if (reject) reject(err)
+      else resolve({ data: null, error: { message: err.message } })
+    }
+  }
+}
+
+// Shape "vazio" de uma tabela — usado só para checar se `updated_at` faz
+// parte do schema daquela tabela antes de preenchê-lo automaticamente.
+function seedShape(table) {
+  const shapes = {
+    weflow_workspaces: { updated_at: true },
+    weflow_invitations: {},
+    weflow_notes: { updated_at: true },
+    weflow_media: { updated_at: true },
+    weflow_clients: { updated_at: true },
+    weflow_report_activities: { updated_at: true },
+    weflow_tasks: {},
+    weflow_folders: {},
+    weflow_folder_media: {},
+    weflow_columns: {},
+    weflow_users: {},
+    weflow_todos: {},
+  }
+  return shapes[table] || {}
+}
+
+export function createLocalClient() {
+  return {
+    from: (table) => new LocalQuery(table),
+  }
+}

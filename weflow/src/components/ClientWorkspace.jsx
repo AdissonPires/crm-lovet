@@ -1,0 +1,150 @@
+import { useEffect, useMemo, useState } from 'react'
+import { IconArrowLeft, IconBuilding, IconUser, IconPhone, IconMail, IconKanban, IconFolder } from '../icons.jsx'
+import Kanban from './Kanban.jsx'
+import DocumentsView from './DocumentsView.jsx'
+import LoadingBlock from './LoadingBlock.jsx'
+import { assigneeColor } from '../colors.js'
+import { useToast } from '../toast.jsx'
+import { useClientTasks, useTaskActions } from '../hooks/useTasks.js'
+import { useColumns } from '../hooks/useWorkspaceData.js'
+import { bucketOf, columnBuckets } from '../columnBuckets.js'
+
+const EMPTY = []
+
+const TABS = [
+  { key: 'kanban', label: 'Kanban', icon: IconKanban },
+  { key: 'docs',   label: 'Documentações', icon: IconFolder },
+]
+
+// Workspace de um cliente: cabeçalho com dados + métricas, Kanban filtrado
+// estritamente pelas tarefas daquele client_id e as documentações do cliente.
+// A aba ativa pode ser controlada de fora (ex.: App.jsx abre direto em "docs"
+// ao navegar de uma pasta vinculada a este cliente); sem controle externo,
+// mantém estado próprio começando pelo Kanban.
+export default function ClientWorkspace({
+  client, currentUser, onBack, onOpenNote,
+  tab: controlledTab, onTabChange, targetFolderId, onConsumeTarget,
+}) {
+  const { handleError: onError } = useToast()
+  // Tarefas de TODOS os responsáveis deste cliente (não só as do usuário logado);
+  // revalidam a cada 6 s para mostrar o que a equipe mexeu sem F5.
+  const tasksQuery = useClientTasks(client.id)
+  const tasks = tasksQuery.data ?? EMPTY
+  const { createClientTask: onAdd } = useTaskActions({ userId: currentUser.id })
+  // Falha ao carregar avisa por toast; o quadro segue com o último dado.
+  useEffect(() => { if (tasksQuery.error) onError(tasksQuery.error) }, [tasksQuery.error]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const [internalTab, setInternalTab] = useState('kanban')
+  const tab = controlledTab ?? internalTab
+  const setTab = onTabChange ?? setInternalTab
+  // Métricas rápidas do quadro — memoizadas junto com as tarefas do cliente
+  const columns = useColumns().data
+  const buckets = useMemo(() => columnBuckets(columns), [columns])
+  const metrics = useMemo(() => {
+    const m = { todo: 0, doing: 0, done: 0, total: tasks.length }
+    for (const t of tasks) m[bucketOf(t.column_key, buckets)] += 1
+    m.progress = m.total ? Math.round((m.done / m.total) * 100) : 0
+    return m
+  }, [tasks, buckets])
+
+  const color = assigneeColor(client.id, client.color)
+
+  // Toda tarefa criada neste quadro nasce vinculada ao cliente ativo
+  const handleAdd = (fields) => onAdd({ ...fields, client_id: client.id })
+
+  return (
+    <div className="client-workspace">
+      <button className="client-back-btn" onClick={onBack}>
+        <IconArrowLeft size={15} />
+        Voltar para todos os clientes
+      </button>
+
+      <div className="panel client-ws-header">
+        <div className="client-ws-id">
+          <div className="client-ws-icon" style={{ background: `${color}1f`, color }}>
+            <IconBuilding size={24} />
+          </div>
+          <div className="client-ws-titles">
+            <h3>{client.name || 'Cliente sem nome'}</h3>
+            <div className="client-ws-meta">
+              {client.cnpj && <span className="client-card-badge">CNPJ: {client.cnpj}</span>}
+              {client.address && <span className="client-ws-address">{client.address}</span>}
+            </div>
+            {(client.contact_name || client.phone || client.email) && (
+              <div className="client-card-contacts client-ws-contacts">
+                {client.contact_name && <span><IconUser size={13} />{client.contact_name}</span>}
+                {client.phone && <span><IconPhone size={13} />{client.phone}</span>}
+                {client.email && (
+                  <a href={`mailto:${client.email}`}><IconMail size={13} />{client.email}</a>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="client-ws-metrics">
+          <div className="client-ws-metric">
+            <strong>{metrics.todo}</strong>
+            <small>{buckets.todo.label}</small>
+          </div>
+          {buckets.doing && (
+            <div className="client-ws-metric">
+              <strong>{metrics.doing}</strong>
+              <small>{buckets.doing.label}</small>
+            </div>
+          )}
+          <div className="client-ws-metric">
+            <strong>{metrics.done}</strong>
+            <small>Concluídas</small>
+          </div>
+          <div className="client-ws-metric is-progress">
+            <strong>{metrics.progress}%</strong>
+            <small>Progresso</small>
+          </div>
+        </div>
+      </div>
+
+      <div className="client-ws-tabs">
+        {TABS.map((t) => {
+          const Ico = t.icon
+          return (
+            <button
+              key={t.key}
+              className={tab === t.key ? 'active' : ''}
+              onClick={() => setTab(t.key)}
+            >
+              <Ico size={15} />
+              {t.label}
+            </button>
+          )
+        })}
+      </div>
+
+      {tab === 'kanban' ? (
+        tasksQuery.isLoading ? (
+          <LoadingBlock text="Carregando tarefas..." />
+        ) : (
+          <Kanban
+            key={client.id}
+            tasks={tasks}
+            clients={[client]}
+            currentUser={currentUser}
+            onAdd={handleAdd}
+          />
+        )
+      ) : (
+        /* Documentações no escopo deste cliente — a chave força remontagem ao
+           trocar de cliente, recarregando as pastas do novo escopo */
+        <DocumentsView
+          key={client.id}
+          clientId={client.id}
+          clients={[client]}
+          onError={onError}
+          targetFolderId={targetFolderId}
+          onConsumeTarget={onConsumeTarget}
+          onOpenNote={onOpenNote}
+        />
+      )}
+    </div>
+  )
+}

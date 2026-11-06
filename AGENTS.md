@@ -11,6 +11,7 @@ Guia rápido para agentes e desenvolvedores. Detalhes de instalação estão no 
   permissões do CRM em `apps/crm/src/lib/policy.ts`.
 - IA: `packages/ai` (Anthropic quando `ANTHROPIC_API_KEY` existe; senão Ollama).
 - WhatsApp: WhatsGW ou Evolution API + n8n (`n8n-evolution/`).
+- WeFlow (`weflow/`): gestor de tarefas separado (Vite+React, Express, Supabase ou banco local). O CRM abre ele por `/api/sso/weflow` (token HS256 de 60 s com `SSO_SHARED_SECRET`). Fora dos workspaces npm, de propósito: usa React 18.
 
 ## Convenções
 
