@@ -24,5 +24,5 @@ export function BrandLogo({
     />
   );
   if (!placa) return <span className={`inline-flex ${className}`}>{img}</span>;
-  return <span className={`inline-flex rounded-2xl bg-white p-2 shadow-sm ${className}`}>{img}</span>;
+  return <span className={`inline-flex rounded-2xl bg-[#ffffff] p-2 shadow-sm ${className}`}>{img}</span>;
 }

@@ -26,6 +26,10 @@
   /* Apoio quente para destaques que precisam contrastar com o verde. */
   --brand-accent: #f5a524;
   --noturno: #1c211e;
+  --chart-grid: #e7ece9;
+  --chart-text: #8a948e;
+  --chart-track: #eef2ef;
+  --chart-grafite: #363533;
   /* Tema padrão é o claro (o escuro é opt-in, ver bloco no fim do arquivo). Sem isso, navegadores (Safari em
      especial) pintam a área da página com o "canvas" escuro do sistema
      operacional antes/ao redor do conteúdo quando o SO está em modo
@@ -91,24 +95,24 @@ body {
    A tela de login e o menu lateral já são escuros e não mudam. */
 html[data-theme="dark"] {
   color-scheme: dark;
-  --background: #0b1220;
-  --foreground: #e6eaf2;
-  --color-zinc-50: #18233a;
-  --color-zinc-100: #1c2942;
-  --color-zinc-200: #2a3856;
-  --color-zinc-300: #3b4b6e;
-  --color-slate-50: #18233a;
-  --color-slate-100: #1c2942;
-  --color-slate-200: #2a3856;
-  --color-slate-300: #3b4b6e;
-  --color-gray-50: #18233a;
-  --color-gray-100: #1c2942;
-  --color-gray-200: #2a3856;
-  --color-gray-300: #3b4b6e;
-  --color-neutral-50: #18233a;
-  --color-neutral-100: #1c2942;
-  --color-neutral-200: #2a3856;
-  --color-neutral-300: #3b4b6e;
+  --background: #0f1411;
+  --foreground: #e6ece8;
+  --color-zinc-50: #1a211d;
+  --color-zinc-100: #202823;
+  --color-zinc-200: #2c362f;
+  --color-zinc-300: #3e4b43;
+  --color-slate-50: #1a211d;
+  --color-slate-100: #202823;
+  --color-slate-200: #2c362f;
+  --color-slate-300: #3e4b43;
+  --color-gray-50: #1a211d;
+  --color-gray-100: #202823;
+  --color-gray-200: #2c362f;
+  --color-gray-300: #3e4b43;
+  --color-neutral-50: #1a211d;
+  --color-neutral-100: #202823;
+  --color-neutral-200: #2c362f;
+  --color-neutral-300: #3e4b43;
   --color-emerald-50: hsl(160 45% 13%);
   --color-emerald-100: hsl(160 45% 17%);
   --color-emerald-200: hsl(160 40% 25%);
@@ -153,10 +157,16 @@ html[data-theme="dark"] {
   --color-rose-100: hsl(350 45% 17%);
   --color-rose-200: hsl(350 40% 25%);
   --color-rose-300: hsl(350 40% 36%);
-  --brand-50: hsl(210 55% 13%);
-  --brand-100: hsl(210 55% 17%);
-  --brand-200: hsl(210 50% 26%);
-  --brand-300: hsl(210 55% 38%);
+  --brand-50: hsl(150 40% 12%);
+  --brand-100: hsl(150 40% 16%);
+  --brand-200: hsl(150 38% 24%);
+  --brand-300: hsl(150 42% 34%);
+  --brand-900: hsl(150 18% 8%);
+  --noturno: #0b0f0d;
+  --chart-grid: #2a342d;
+  --chart-text: #7f8d84;
+  --chart-track: #232c26;
+  --chart-grafite: #b4c0b8;
 }
 
 html[data-theme="dark"],
@@ -165,49 +175,49 @@ html[data-theme="dark"] body {
 }
 
 html[data-theme="dark"] .bg-white {
-  background-color: #121b2e;
+  background-color: #171d19;
 }
 
-html[data-theme="dark"] .text-zinc-400 { color: #7f8da8; }
-html[data-theme="dark"] .text-zinc-500 { color: #93a0b8; }
-html[data-theme="dark"] .text-zinc-600 { color: #aab5c9; }
-html[data-theme="dark"] .hover\:text-zinc-600:hover { color: #aab5c9; }
-html[data-theme="dark"] .text-zinc-700 { color: #c2cbda; }
-html[data-theme="dark"] .hover\:text-zinc-700:hover { color: #c2cbda; }
-html[data-theme="dark"] .text-zinc-800 { color: #dae0ea; }
-html[data-theme="dark"] .hover\:text-zinc-800:hover { color: #dae0ea; }
-html[data-theme="dark"] .text-zinc-900 { color: #eef1f6; }
-html[data-theme="dark"] .hover\:text-zinc-900:hover { color: #eef1f6; }
-html[data-theme="dark"] .text-slate-400 { color: #7f8da8; }
-html[data-theme="dark"] .text-slate-500 { color: #93a0b8; }
-html[data-theme="dark"] .text-slate-600 { color: #aab5c9; }
-html[data-theme="dark"] .hover\:text-slate-600:hover { color: #aab5c9; }
-html[data-theme="dark"] .text-slate-700 { color: #c2cbda; }
-html[data-theme="dark"] .hover\:text-slate-700:hover { color: #c2cbda; }
-html[data-theme="dark"] .text-slate-800 { color: #dae0ea; }
-html[data-theme="dark"] .hover\:text-slate-800:hover { color: #dae0ea; }
-html[data-theme="dark"] .text-slate-900 { color: #eef1f6; }
-html[data-theme="dark"] .hover\:text-slate-900:hover { color: #eef1f6; }
-html[data-theme="dark"] .text-gray-400 { color: #7f8da8; }
-html[data-theme="dark"] .text-gray-500 { color: #93a0b8; }
-html[data-theme="dark"] .text-gray-600 { color: #aab5c9; }
-html[data-theme="dark"] .hover\:text-gray-600:hover { color: #aab5c9; }
-html[data-theme="dark"] .text-gray-700 { color: #c2cbda; }
-html[data-theme="dark"] .hover\:text-gray-700:hover { color: #c2cbda; }
-html[data-theme="dark"] .text-gray-800 { color: #dae0ea; }
-html[data-theme="dark"] .hover\:text-gray-800:hover { color: #dae0ea; }
-html[data-theme="dark"] .text-gray-900 { color: #eef1f6; }
-html[data-theme="dark"] .hover\:text-gray-900:hover { color: #eef1f6; }
-html[data-theme="dark"] .text-neutral-400 { color: #7f8da8; }
-html[data-theme="dark"] .text-neutral-500 { color: #93a0b8; }
-html[data-theme="dark"] .text-neutral-600 { color: #aab5c9; }
-html[data-theme="dark"] .hover\:text-neutral-600:hover { color: #aab5c9; }
-html[data-theme="dark"] .text-neutral-700 { color: #c2cbda; }
-html[data-theme="dark"] .hover\:text-neutral-700:hover { color: #c2cbda; }
-html[data-theme="dark"] .text-neutral-800 { color: #dae0ea; }
-html[data-theme="dark"] .hover\:text-neutral-800:hover { color: #dae0ea; }
-html[data-theme="dark"] .text-neutral-900 { color: #eef1f6; }
-html[data-theme="dark"] .hover\:text-neutral-900:hover { color: #eef1f6; }
+html[data-theme="dark"] .text-zinc-400 { color: #86948b; }
+html[data-theme="dark"] .text-zinc-500 { color: #9aa79f; }
+html[data-theme="dark"] .text-zinc-600 { color: #b0bbb4; }
+html[data-theme="dark"] .hover\:text-zinc-600:hover { color: #b0bbb4; }
+html[data-theme="dark"] .text-zinc-700 { color: #c6cfc9; }
+html[data-theme="dark"] .hover\:text-zinc-700:hover { color: #c6cfc9; }
+html[data-theme="dark"] .text-zinc-800 { color: #dde3df; }
+html[data-theme="dark"] .hover\:text-zinc-800:hover { color: #dde3df; }
+html[data-theme="dark"] .text-zinc-900 { color: #eff3f0; }
+html[data-theme="dark"] .hover\:text-zinc-900:hover { color: #eff3f0; }
+html[data-theme="dark"] .text-slate-400 { color: #86948b; }
+html[data-theme="dark"] .text-slate-500 { color: #9aa79f; }
+html[data-theme="dark"] .text-slate-600 { color: #b0bbb4; }
+html[data-theme="dark"] .hover\:text-slate-600:hover { color: #b0bbb4; }
+html[data-theme="dark"] .text-slate-700 { color: #c6cfc9; }
+html[data-theme="dark"] .hover\:text-slate-700:hover { color: #c6cfc9; }
+html[data-theme="dark"] .text-slate-800 { color: #dde3df; }
+html[data-theme="dark"] .hover\:text-slate-800:hover { color: #dde3df; }
+html[data-theme="dark"] .text-slate-900 { color: #eff3f0; }
+html[data-theme="dark"] .hover\:text-slate-900:hover { color: #eff3f0; }
+html[data-theme="dark"] .text-gray-400 { color: #86948b; }
+html[data-theme="dark"] .text-gray-500 { color: #9aa79f; }
+html[data-theme="dark"] .text-gray-600 { color: #b0bbb4; }
+html[data-theme="dark"] .hover\:text-gray-600:hover { color: #b0bbb4; }
+html[data-theme="dark"] .text-gray-700 { color: #c6cfc9; }
+html[data-theme="dark"] .hover\:text-gray-700:hover { color: #c6cfc9; }
+html[data-theme="dark"] .text-gray-800 { color: #dde3df; }
+html[data-theme="dark"] .hover\:text-gray-800:hover { color: #dde3df; }
+html[data-theme="dark"] .text-gray-900 { color: #eff3f0; }
+html[data-theme="dark"] .hover\:text-gray-900:hover { color: #eff3f0; }
+html[data-theme="dark"] .text-neutral-400 { color: #86948b; }
+html[data-theme="dark"] .text-neutral-500 { color: #9aa79f; }
+html[data-theme="dark"] .text-neutral-600 { color: #b0bbb4; }
+html[data-theme="dark"] .hover\:text-neutral-600:hover { color: #b0bbb4; }
+html[data-theme="dark"] .text-neutral-700 { color: #c6cfc9; }
+html[data-theme="dark"] .hover\:text-neutral-700:hover { color: #c6cfc9; }
+html[data-theme="dark"] .text-neutral-800 { color: #dde3df; }
+html[data-theme="dark"] .hover\:text-neutral-800:hover { color: #dde3df; }
+html[data-theme="dark"] .text-neutral-900 { color: #eff3f0; }
+html[data-theme="dark"] .hover\:text-neutral-900:hover { color: #eff3f0; }
 html[data-theme="dark"] .text-emerald-600 { color: hsl(160 75% 64%); }
 html[data-theme="dark"] .hover\:text-emerald-600:hover { color: hsl(160 75% 64%); }
 html[data-theme="dark"] .text-emerald-700 { color: hsl(160 75% 70%); }
@@ -296,23 +306,23 @@ html[data-theme="dark"] .text-rose-800 { color: hsl(350 80% 77%); }
 html[data-theme="dark"] .hover\:text-rose-800:hover { color: hsl(350 80% 77%); }
 html[data-theme="dark"] .text-rose-900 { color: hsl(350 85% 85%); }
 html[data-theme="dark"] .hover\:text-rose-900:hover { color: hsl(350 85% 85%); }
-html[data-theme="dark"] .text-brand-600 { color: hsl(210 75% 64%); }
-html[data-theme="dark"] .hover\:text-brand-600:hover { color: hsl(210 75% 64%); }
-html[data-theme="dark"] .text-brand-700 { color: hsl(210 75% 70%); }
-html[data-theme="dark"] .hover\:text-brand-700:hover { color: hsl(210 75% 70%); }
-html[data-theme="dark"] .text-brand-800 { color: hsl(210 80% 77%); }
-html[data-theme="dark"] .hover\:text-brand-800:hover { color: hsl(210 80% 77%); }
-html[data-theme="dark"] .text-brand-900 { color: hsl(210 85% 85%); }
-html[data-theme="dark"] .hover\:text-brand-900:hover { color: hsl(210 85% 85%); }
-html[data-theme="dark"] .bg-zinc-700 { background-color: #3a4c73; }
-html[data-theme="dark"] .bg-zinc-800 { background-color: #34456a; }
-html[data-theme="dark"] .bg-zinc-900 { background-color: #2b3a57; }
+html[data-theme="dark"] .text-brand-600 { color: hsl(151 55% 52%); }
+html[data-theme="dark"] .hover\:text-brand-600:hover { color: hsl(151 55% 52%); }
+html[data-theme="dark"] .text-brand-700 { color: hsl(151 58% 58%); }
+html[data-theme="dark"] .hover\:text-brand-700:hover { color: hsl(151 58% 58%); }
+html[data-theme="dark"] .text-brand-800 { color: hsl(151 62% 66%); }
+html[data-theme="dark"] .hover\:text-brand-800:hover { color: hsl(151 62% 66%); }
+html[data-theme="dark"] .text-brand-900 { color: hsl(151 66% 76%); }
+html[data-theme="dark"] .hover\:text-brand-900:hover { color: hsl(151 66% 76%); }
+html[data-theme="dark"] .bg-zinc-700 { background-color: #3f4c44; }
+html[data-theme="dark"] .bg-zinc-800 { background-color: #37433b; }
+html[data-theme="dark"] .bg-zinc-900 { background-color: #2d3832; }
 
 @layer base {
   html[data-theme="dark"] input,
   html[data-theme="dark"] textarea,
   html[data-theme="dark"] select {
-    color: #e6eaf2;
+    color: #e6ece8;
   }
 }
 
@@ -320,3 +330,7 @@ html[data-theme="dark"] .bg-zinc-900 { background-color: #2b3a57; }
 .tema-icone-escuro { display: none; }
 html[data-theme="dark"] .tema-icone-claro { display: none; }
 html[data-theme="dark"] .tema-icone-escuro { display: inline; }
+
+html[data-theme="dark"] .bg-\[\#eef2f7\] { background-color: #131915; }
+html[data-theme="dark"] .bg-\[\#f7f9fc\] { background-color: #101512; }
+html[data-theme="dark"] .bg-\[\#d9fdd3\] { background-color: #174d2e; }

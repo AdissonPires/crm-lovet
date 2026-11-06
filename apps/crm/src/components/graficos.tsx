@@ -2,7 +2,7 @@ import { card } from "@/components/ui";
 
 /** Gráficos leves em SVG/HTML (sem biblioteca), com as cores da marca. */
 
-export const PALETA = ["#009949", "#363533", "#f5a524", "#4f9de0", "#8b6fd1", "#e06666", "#6bbf8a", "#a3b1a8"];
+export const PALETA = ["#009949", "var(--chart-grafite)", "#f5a524", "#4f9de0", "#8b6fd1", "#e06666", "#6bbf8a", "#a3b1a8"];
 
 export const brlCompacto = (v: number) => {
   const a = Math.abs(v);
@@ -41,8 +41,8 @@ export function ColunasMensais({ dados, rotuloValor = "Faturamento", rotuloMeta 
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label={`${rotuloValor} por mês`}>
         {ticks.map((t) => (
           <g key={t}>
-            <line x1={PL} x2={W - PR} y1={y(t)} y2={y(t)} stroke="#e7ece9" strokeWidth="1" />
-            <text x={PL - 6} y={y(t) + 3} textAnchor="end" fontSize="10" fill="#8a948e">{brlCompacto(t).replace("R$ ", "")}</text>
+            <line x1={PL} x2={W - PR} y1={y(t)} y2={y(t)} style={{ stroke: "var(--chart-grid)" }} strokeWidth="1" />
+            <text x={PL - 6} y={y(t) + 3} textAnchor="end" fontSize="10" style={{ fill: "var(--chart-text)" }}>{brlCompacto(t).replace("R$ ", "")}</text>
           </g>
         ))}
         {dados.map((d, i) => {
@@ -52,7 +52,7 @@ export function ColunasMensais({ dados, rotuloValor = "Faturamento", rotuloMeta 
               <rect x={x} y={y(d.valor)} width={bw} height={Math.max(0, H - PB - y(d.valor))} rx="4" fill="#009949">
                 <title>{`${mesCurto(d.mes)} — ${brlCompacto(d.valor)}`}</title>
               </rect>
-              <text x={x + bw / 2} y={H - 10} textAnchor="middle" fontSize="10" fill="#8a948e">{mesCurto(d.mes)}</text>
+              <text x={x + bw / 2} y={H - 10} textAnchor="middle" fontSize="10" style={{ fill: "var(--chart-text)" }}>{mesCurto(d.mes)}</text>
             </g>
           );
         })}
@@ -100,10 +100,10 @@ export function Rosca({ dados, formato = brlCompacto }: { dados: { label: string
   return (
     <div className="flex flex-col items-center gap-4">
       <svg viewBox="0 0 140 140" className="w-40 h-40 shrink-0 -rotate-90" role="img" aria-label="Participação">
-        <circle cx="70" cy="70" r={R} fill="none" stroke="#eef2ef" strokeWidth="22" />
+        <circle cx="70" cy="70" r={R} fill="none" style={{ stroke: "var(--chart-track)" }} strokeWidth="22" />
         {dados.map((d, i) => {
           const len = (d.valor / total) * C;
-          return <circle key={d.label} cx="70" cy="70" r={R} fill="none" stroke={PALETA[i % PALETA.length]} strokeWidth="22" strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-inicios[i]}><title>{`${d.label}: ${formato(d.valor)}`}</title></circle>;
+          return <circle key={d.label} cx="70" cy="70" r={R} fill="none" style={{ stroke: PALETA[i % PALETA.length] }} strokeWidth="22" strokeDasharray={`${len} ${C - len}`} strokeDashoffset={-inicios[i]}><title>{`${d.label}: ${formato(d.valor)}`}</title></circle>;
         })}
       </svg>
       <ul className="flex-1 min-w-0 w-full space-y-1.5">

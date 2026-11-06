@@ -61,7 +61,7 @@ export default async function IndicadoresPage({ searchParams }: { searchParams: 
           <BarrasHorizontais sub dados={d.porRegiao.map((r) => ({ label: r.label, valor: r.valor, extra: `${nInt(r.extra ?? 0)} clientes` }))} />
         </CardGrafico>
         <CardGrafico titulo="Vendas por segmento" sub="Faturamento e nº de pedidos">
-          <BarrasHorizontais sub cor="#363533" dados={d.porSegmento.map((r) => ({ label: r.label, valor: r.valor, extra: `${nInt(r.extra ?? 0)} pedidos` }))} />
+          <BarrasHorizontais sub cor="var(--chart-grafite)" dados={d.porSegmento.map((r) => ({ label: r.label, valor: r.valor, extra: `${nInt(r.extra ?? 0)} pedidos` }))} />
         </CardGrafico>
         <CardGrafico titulo="Categorias" sub="Participação no faturamento">
           <Rosca dados={d.porCategoria} />
